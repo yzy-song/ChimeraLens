@@ -4,6 +4,8 @@ import { User } from '@chimeralens/db';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 
+import { ReplicateProvider } from './providers/replicate.provider';
+import { HuggingFaceProvider } from './providers/huggingface.provider';
 import Replicate from 'replicate';
 
 @Injectable()
@@ -13,6 +15,8 @@ export class GenerationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly replicateProvider: ReplicateProvider,
+    private readonly huggingFaceProvider: HuggingFaceProvider,
   ) {
     // 配置 Cloudinary
     cloudinary.config({
@@ -43,37 +47,47 @@ export class GenerationService {
     user: User,
     sourceImage: Express.Multer.File,
     templateImageUrl: string,
+    provider: string,
+    // 将来我们可以传入模型ID来选择不同的模型
+    // modelId: string
   ) {
-    // 1. 检查用户点数
     if (user.credits <= 0) {
       throw new ForbiddenException('Insufficient credits');
     }
 
-    // 2. 上传源图片到 Cloudinary
-    const uploadResult = await this.uploadImage(sourceImage.buffer);
-    const sourceImageUrl = uploadResult.secure_url;
+    const sourceImageUrl = (await this.uploadImage(sourceImage.buffer))
+      .secure_url;
 
-    // 3. 调用 Replicate AI 模型
-    console.log('Running Replicate model...');
-    const output = await this.replicate.run(
-      // 这是一个常用的换脸模型，你也可以在 Replicate 网站上寻找其他模型
-      'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111',
-      {
-        input: {
-          face: sourceImageUrl, // 你的脸
-          target: templateImageUrl, // 模板图
-        },
-      },
-    );
-    console.log('Replicate model finished.', output);
-    const resultImageUrl =
-      typeof output === 'string' ? output : (output as unknown as string);
+    // 1. 定义要使用的模型和输入
+    const modelId =
+      'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111';
+    const modelInput = {
+      target_image: templateImageUrl,
+      swap_image: sourceImageUrl,
+    };
+
+    // 2. 调用 Replicate 或者 HuggingFace Provider
+    let output;
+    console.log('Using provider:', provider);
+    if (provider === 'replicate') {
+      output = await this.replicateProvider.run({
+        model: modelId,
+        input: modelInput,
+      });
+    } else if (provider === 'huggingface') {
+      output = await this.huggingFaceProvider.run({
+        model: modelId,
+        input: modelInput,
+      });
+    } else {
+      throw new Error('Unsupported AI provider.');
+    }
+    const resultImageUrl = Array.isArray(output) ? output[0] : output;
 
     if (!resultImageUrl) {
       throw new Error('AI generation failed.');
     }
 
-    // 4. 使用数据库事务：扣除点数并记录生成历史
     const [updatedUser, newGeneration] = await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
