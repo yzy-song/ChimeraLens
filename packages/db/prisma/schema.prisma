@@ -1,0 +1,36 @@
+// packages/db/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  isGuest   Boolean  @default(true)
+  guestId   String?  @unique // 用于游客身份识别
+  credits   Int      @default(10) // 免费额度
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  generations Generation[]
+}
+
+model Generation {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt           String?
+  templateImageUrl String
+  sourceImageUrl   String
+  resultImageUrl   String
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+}
