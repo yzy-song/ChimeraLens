@@ -8,12 +8,8 @@ async function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (e) =>
-      reject(
-        new Error(
-          e instanceof ErrorEvent && e.message ? e.message : 'FileReader error',
-        ),
-      );
+    // prettier-ignore
+    reader.onerror = (e) => reject(new Error(e instanceof ErrorEvent && e.message ? e.message : 'FileReader error'));
     reader.readAsDataURL(blob);
   });
 }
@@ -23,15 +19,10 @@ export class HuggingFaceProvider implements AiProvider {
   private hf: InferenceClient;
 
   constructor(private readonly configService: ConfigService) {
-    this.hf = new InferenceClient(
-      this.configService.get<string>('HUGGINGFACE_API_TOKEN'),
-    );
+    this.hf = new InferenceClient(this.configService.get<string>('HUGGINGFACE_API_TOKEN'));
   }
 
-  async run(inputs: {
-    model: string;
-    input: Record<string, any>;
-  }): Promise<string> {
+  async run(inputs: { model: string; input: Record<string, any> }): Promise<string> {
     const { model, input } = inputs;
 
     // HuggingFace 的 image-to-image 模型需要图片是 Blob 格式

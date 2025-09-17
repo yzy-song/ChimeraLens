@@ -7,7 +7,9 @@ import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 import { ReplicateProvider } from './providers/replicate.provider';
 import { HuggingFaceProvider } from './providers/huggingface.provider';
 import Replicate from 'replicate';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
+import { paginate } from 'src/common/utils/pagination.util';
 @Injectable()
 export class GenerationService {
   private replicate: Replicate;
@@ -55,12 +57,12 @@ export class GenerationService {
       throw new ForbiddenException('Insufficient credits');
     }
 
-    const sourceImageUrl = (await this.uploadImage(sourceImage.buffer))
-      .secure_url;
+    const sourceImageUrl = (await this.uploadImage(sourceImage.buffer)).secure_url;
 
     // 1. 定义要使用的模型和输入
     const modelId =
       'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111';
+
     const modelInput = {
       target_image: templateImageUrl,
       swap_image: sourceImageUrl,
@@ -107,5 +109,17 @@ export class GenerationService {
       resultImageUrl: newGeneration.resultImageUrl,
       credits: updatedUser.credits,
     };
+  }
+
+  async findAll(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.generation.findMany({ skip, take: limit }),
+      this.prisma.generation.count(),
+    ]);
+
+    return paginate(items, total, page, limit); // <-- 使用你的分页工具函数
   }
 }

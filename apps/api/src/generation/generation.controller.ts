@@ -6,6 +6,8 @@ import {
   UploadedFile,
   Body,
   Req,
+  Get,
+  Query,
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
@@ -13,10 +15,17 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GenerationService } from './generation.service';
 import { RequestWithUser } from 'src/auth/guest.middleware';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('generation')
 export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
+
+  @Get()
+  findAll(@Query() paginationDto: PaginationDto) {
+    // <-- 直接使用
+    return this.generationService.findAll(paginationDto);
+  }
 
   @Post()
   @UseInterceptors(FileInterceptor('sourceImage'))

@@ -13,10 +13,7 @@ export class ReplicateProvider implements AiProvider {
     });
   }
 
-  async run(inputs: {
-    model: string;
-    input: Record<string, any>;
-  }): Promise<string | string[]> {
+  async run(inputs: { model: string; input: Record<string, any> }): Promise<string | string[]> {
     const { model, input } = inputs;
     const output = await this.replicate.run(model as any, { input });
     return output as string | string[];
