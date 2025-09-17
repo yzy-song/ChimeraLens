@@ -60,8 +60,7 @@ export class GenerationService {
     const sourceImageUrl = (await this.uploadImage(sourceImage.buffer)).secure_url;
 
     // 1. 定义要使用的模型和输入
-    const modelId =
-      'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111';
+    const modelId = 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111';
 
     const modelInput = {
       target_image: templateImageUrl,

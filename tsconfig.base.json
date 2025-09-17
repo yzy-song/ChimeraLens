@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@chimeralens/db": ["packages/db/index.ts"],
+      "@chimeralens/db/*": ["packages/db/*"]
+    },
     "target": "es2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,

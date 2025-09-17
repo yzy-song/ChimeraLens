@@ -56,7 +56,7 @@ async function bootstrap() {
       .map((url) => url.trim()),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: 'Content-Type, Authorization, Accept',
+    allowedHeaders: 'Content-Type, Authorization, Accept,x-guest-id', // ← 加上 x-guest-id
     preflightContinue: false,
     optionsSuccessStatus: 204,
   });
