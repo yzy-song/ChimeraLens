@@ -7,9 +7,19 @@ interface ImageUploaderProps {
   onFileSelect: (file: File) => void;
 }
 
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return /Mobi|Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
 export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -64,7 +74,11 @@ export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
         {previewUrl ? (
           <img src={previewUrl} alt="Image preview" className="mx-auto h-40 w-40 rounded-full object-cover" />
         ) : (
-          <p className="text-gray-500">Click to upload or drag & drop</p>
+          <p className="text-gray-500">
+            {isMobile
+              ? 'Tap to upload photo'
+              : 'Click to upload or drag & drop'}
+          </p>
         )}
       </div>
     </div>
