@@ -26,7 +26,15 @@ import { APP_GUARD } from '@nestjs/core';
     TemplatesModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppLogger],
+  providers: [
+    AppService,
+    AppLogger,
+    // 将 ThrottlerGuard 设置为全局守卫
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
