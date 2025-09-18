@@ -7,7 +7,10 @@ import { GuestMiddleware } from './auth/guest.middleware'; // <-- 导入
 import { ConfigModule } from '@nestjs/config';
 import { GenerationModule } from './generation/generation.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { TemplatesModule } from './templates/templates.module';
+
+import { FirebaseAdminModule } from './common/firebase/firebase-admin.module';
 import { AppLogger } from './common/utils/logger';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // <-- 1. 导入
 import { APP_GUARD } from '@nestjs/core';
@@ -24,6 +27,9 @@ import { APP_GUARD } from '@nestjs/core';
     GenerationModule,
     AuthModule,
     TemplatesModule,
+    UsersModule,
+    FirebaseAdminModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

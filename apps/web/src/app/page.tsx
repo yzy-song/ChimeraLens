@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { AuthButton } from '@/components/auth-button';
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -62,13 +63,16 @@ export default function Home() {
 
   return (
     <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-50">
-      <header className="p-4 border-b flex justify-between items-center bg-white dark:bg-gray-950 sticky top-0 z-10">
+      <header className="p-4 border-b flex justify-between items-center ...">
         <h1 className="text-xl font-bold">ChimeraLens AI</h1>
-        {isClient && (
-          <div className="px-3 py-2 border rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-800">
-            ✨ Credits: {user?.credits ?? '...'}
-          </div>
-        )}
+        <div className='flex items-center gap-4'>
+          {isClient && (
+            <div className="p-2 border rounded-md text-sm font-semibold ...">
+              ✨ Credits: {user?.credits ?? '...'}
+            </div>
+          )}
+          {isClient && <AuthButton />} {/* <-- 在这里添加登录/登出按钮 */}
+        </div>
       </header>
 
       <main className="p-4 md:p-8">

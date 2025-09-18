@@ -1,5 +1,4 @@
 // packages/db/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,14 +7,26 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+// --- 新增 Role 枚举 ---
+enum Role {
+  USER
+  ADMIN
+}
 
 model User {
   id        String   @id @default(cuid())
   email     String?  @unique
   name      String?
+  password  String?  // <-- 添加密码字段
+  role      Role     @default(USER) // <-- 添加角色字段
+
   isGuest   Boolean  @default(true)
-  guestId   String?  @unique // 用于游客身份识别
-  credits   Int      @default(10) // 免费额度
+  guestId   String?  @unique
+  credits   Int      @default(10)
+
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -27,6 +38,11 @@ model Generation {
   userId           String
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   prompt           String?
+
+  // 我们把模型信息也存起来，便于未来分析
+  modelId          String?
+  modelProvider    String   @default("replicate")
+
   templateImageUrl String
   sourceImageUrl   String
   resultImageUrl   String

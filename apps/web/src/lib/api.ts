@@ -1,7 +1,5 @@
-// apps/web/src/lib/api.ts
 import axios from "axios";
-// 我们未来会创建一个状态管理库，现在先注释掉
-// import { useAuthStore } from '@/store/auth.store';
+import { useAuthStore } from "@/store/auth.store";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
@@ -15,8 +13,7 @@ export const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // 将来我们会从 Zustand/Redux 等状态管理器中获取 token
-    // const token = useAuthStore.getState().token;
-    const token = null; // 当前我们还没有登录功能，所以暂时设为 null
+    const token = useAuthStore.getState().token;
 
     if (token) {
       // 如果用户已登录，我们发送 JWT Token

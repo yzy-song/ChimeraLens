@@ -10,6 +10,7 @@ import { AppLogger } from './common/utils/logger';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Response } from 'express';
 
 import { join } from 'path';
 import * as bodyParser from 'body-parser';
@@ -28,13 +29,15 @@ async function bootstrap() {
 
   // --- Swagger 配置 ---
   const config = new DocumentBuilder()
-    .setTitle('美甲店预约系统 API')
-    .setDescription('这是为美甲店预约系统提供后端服务的 API 文档')
+    .setTitle('ChimeraLens API')
+    .setDescription('这是为ChimeraLens提供后端服务的 API 文档')
     .setVersion('1.0')
-    .addBearerAuth() // <-- 关键：启用 Bearer Token 授权
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document); // <-- 'api-docs' 是访问路径
+  SwaggerModule.setup('api-docs', app, document);
+
+  console.log(`Swagger API docs available at http://localhost:3000/api-docs`);
   // --- Swagger 配置结束 ---
 
   const configService = app.get(ConfigService);
