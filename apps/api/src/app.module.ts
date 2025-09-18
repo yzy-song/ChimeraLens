@@ -9,9 +9,22 @@ import { GenerationModule } from './generation/generation.module';
 import { AuthModule } from './auth/auth.module';
 import { TemplatesModule } from './templates/templates.module';
 import { AppLogger } from './common/utils/logger';
-
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // <-- 1. 导入
+import { APP_GUARD } from '@nestjs/core';
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, GenerationModule, AuthModule, TemplatesModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 窗口时间，单位：毫秒 (这里是 60 秒)
+        limit: 20, // 在一个窗口时间内，同一个 IP 最多允许 20 次请求
+      },
+    ]),
+    PrismaModule,
+    GenerationModule,
+    AuthModule,
+    TemplatesModule,
+  ],
   controllers: [AppController],
   providers: [AppService, AppLogger],
 })

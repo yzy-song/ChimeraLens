@@ -17,16 +17,11 @@ export class AppLogger implements LoggerService {
       printf((info: TransformableInfo) => {
         const { timestamp, level, message, context, trace } = info;
 
-        const messageStr =
-          typeof message === 'string'
-            ? message
-            : JSON.stringify(message, null, 2);
+        const messageStr = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
         const contextStr = context
           ? `[${typeof context === 'object' ? JSON.stringify(context) : String(context)}]`
           : '';
-        const traceStr = trace
-          ? `\n${typeof trace === 'object' ? JSON.stringify(trace, null, 2) : String(trace)}`
-          : '';
+        const traceStr = trace ? `\n${typeof trace === 'object' ? JSON.stringify(trace, null, 2) : String(trace)}` : '';
         const ts = String(timestamp).slice(0, 19).replace('T', ' ');
 
         return `${ts} ${level}: ${contextStr} ${messageStr}${traceStr}`;

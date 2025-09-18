@@ -4,10 +4,7 @@ export interface ApiResponse<T> {
   message: string;
 }
 
-export function successResponse<T>(
-  data: T,
-  message = 'Success',
-): ApiResponse<T> {
+export function successResponse<T>(data: T, message = 'Success'): ApiResponse<T> {
   return {
     success: true,
     data,
@@ -17,10 +14,7 @@ export function successResponse<T>(
 
 // 注意：在 NestJS 中，错误响应通常通过抛出异常来处理，
 // 所以我们很少会直接调用 errorResponse。但定义出来有备无患。
-export function errorResponse(
-  message = 'Error',
-  data: null = null,
-): ApiResponse<null> {
+export function errorResponse(message = 'Error', data: null = null): ApiResponse<null> {
   return {
     success: false,
     data,

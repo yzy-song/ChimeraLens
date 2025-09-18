@@ -1,4 +1,3 @@
-// apps/api/src/generation/generation.controller.ts
 import {
   Controller,
   Post,
@@ -11,12 +10,15 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GenerationService } from './generation.service';
 import { RequestWithUser } from 'src/auth/guest.middleware';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
+import { CreateGenerationDto } from './dto/create-generation.dto';
 @Controller('generation')
 export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
@@ -28,6 +30,7 @@ export class GenerationController {
   }
 
   @Post()
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 覆盖默认值：60秒内最多请求 5 次
   @UseInterceptors(FileInterceptor('sourceImage'))
   async create(
     @Req() req: RequestWithUser,
@@ -40,12 +43,16 @@ export class GenerationController {
       }),
     )
     sourceImage: Express.Multer.File,
-    @Body('templateImageUrl') templateImageUrl: string,
-    @Body('modelKey') modelKey: string,
+    @Body() createGenerationDto: CreateGenerationDto,
   ) {
     if (!req.user) {
       throw new Error('User not found...');
     }
-    return this.generationService.createGeneration(req.user, sourceImage, templateImageUrl, modelKey);
+    return this.generationService.createGeneration(
+      req.user,
+      sourceImage,
+      createGenerationDto.templateImageUrl,
+      createGenerationDto.modelKey,
+    );
   }
 }

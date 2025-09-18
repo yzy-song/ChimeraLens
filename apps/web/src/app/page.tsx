@@ -1,3 +1,4 @@
+// apps/web/src/app/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -17,18 +18,18 @@ export default function Home() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
 
-  const { data: userResponse, refetch: refetchUser } = useUser();
+  const { data: userResponse, isLoading: isUserLoading, refetch: refetchUser } = useUser();
   const user = userResponse?.data.user;
 
   const { mutate: generate, data: generationResponse, isPending, isError, error, isSuccess } = useGeneration();
-  
+
   useEffect(() => {
     if (isError) {
       toast.error(error.message);
     }
     if (isSuccess) {
       toast.success('Image generated successfully!');
-      refetchUser();
+      refetchUser(); // 成功后，重新获取用户信息以更新点数
     }
   }, [isError, isSuccess, error, refetchUser]);
 
@@ -53,26 +54,26 @@ export default function Home() {
     generate({
       sourceImage: sourceFile,
       templateImageUrl: selectedTemplate.imageUrl,
-      modelKey: 'unstable-swap-v2'
+      modelKey: 'stable-swap-v1',
     });
   };
 
   const generationResult = generationResponse?.data;
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-50">
-      <header className="p-4 border-b flex justify-between items-center">
+    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-50">
+      <header className="p-4 border-b flex justify-between items-center bg-white dark:bg-gray-950 sticky top-0 z-10">
         <h1 className="text-xl font-bold">ChimeraLens AI</h1>
         {isClient && (
-          <div className="p-2 border rounded-md text-sm font-semibold bg-white dark:bg-gray-800">
+          <div className="px-3 py-2 border rounded-md text-sm font-semibold bg-gray-100 dark:bg-gray-800">
             ✨ Credits: {user?.credits ?? '...'}
           </div>
         )}
       </header>
 
       <main className="p-4 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
-          {/* 左侧栏：模板和上传 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          {/* --- 左侧栏：模板和上传 --- */}
           <div className="flex flex-col items-center gap-8">
             <TemplateGallery 
               selectedTemplateId={selectedTemplate?.id}
@@ -80,7 +81,7 @@ export default function Home() {
             />
             <Card className="w-full max-w-md">
               <CardHeader>
-                <CardTitle className="text-center">Upload Your Photo</CardTitle>
+                <CardTitle className="text-center">2. Upload Your Photo</CardTitle>
               </CardHeader>
               <CardContent>
                 <ImageUploader onFileSelect={setSourceFile} />
@@ -88,18 +89,25 @@ export default function Home() {
             </Card>
           </div>
 
-          {/* 右侧栏：生成按钮和结果 */}
-          <div className="flex flex-col items-center gap-4 lg:sticky lg:top-8">
-            <Button 
-              onClick={handleGenerateClick}
-              disabled={isPending}
-              size="lg"
-              className="w-full max-w-md h-16 text-xl font-bold"
-            >
-              {isPending ? (
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-              ) : 'Generate Image'}
-            </Button>
+          {/* --- 右侧栏：生成按钮和结果 (在桌面端会粘滞在顶部) --- */}
+          <div className="flex flex-col items-center gap-4 lg:sticky lg:top-24 h-full">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="text-center">3. Generate Your Image</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleGenerateClick}
+                  disabled={!selectedTemplate || !sourceFile || isPending}
+                  size="lg"
+                  className="w-full h-16 text-xl font-bold"
+                >
+                  {isPending ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  ) : 'Generate Image'}
+                </Button>
+              </CardContent>
+            </Card>
             
             <Card className="w-full max-w-md aspect-square">
               <CardHeader>
@@ -107,21 +115,21 @@ export default function Home() {
               </CardHeader>
               <CardContent className="flex items-center justify-center h-full p-2">
                 {isPending ? (
-                  <div className="flex flex-col items-center justify-center gap-4 text-center">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-center justify-center gap-4 text-center w-full">
+                    <div className="flex items-center justify-around w-full">
                       {sourceFile && (
-                        <div className="w-24 h-24 rounded-full overflow-hidden border-2">
-                          <Image src={URL.createObjectURL(sourceFile)} alt="Your photo" width={96} height={96} className="object-cover w-full h-full"/>
+                        <div className="w-32 h-32 rounded-full overflow-hidden border-2 shadow-lg">
+                          <Image src={URL.createObjectURL(sourceFile)} alt="Your photo" width={128} height={128} className="object-cover w-full h-full"/>
                         </div>
                       )}
-                      <div className="text-3xl animate-pulse">→</div>
+                      <div className="text-4xl font-bold text-gray-400 animate-pulse mx-4">→</div>
                       {selectedTemplate && (
-                        <div className="w-24 h-24 rounded-lg overflow-hidden border-2">
-                          <Image src={selectedTemplate.imageUrl} alt="Template" width={96} height={96} className="object-cover w-full h-full"/>
+                         <div className="w-32 h-32 rounded-lg overflow-hidden border-2 shadow-lg">
+                          <Image src={selectedTemplate.imageUrl} alt="Template" width={128} height={128} className="object-cover w-full h-full"/>
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-500 animate-pulse mt-4">Generating, please wait...</p>
+                    <p className="text-gray-500 animate-pulse mt-4">Generating, please wait (~30s)...</p>
                   </div>
                 ) : (
                   <>
@@ -129,7 +137,7 @@ export default function Home() {
                     {generationResult && (
                       <Image src={generationResult.resultImageUrl} alt="Generated result" width={512} height={512} className="object-contain rounded-md"/>
                     )}
-                    {!isPending && !isError && !generationResult && <p className="text-gray-400">Your result will appear here</p>}
+                    {!isPending && !generationResult && <p className="text-gray-400">Your result will appear here</p>}
                   </>
                 )}
               </CardContent>

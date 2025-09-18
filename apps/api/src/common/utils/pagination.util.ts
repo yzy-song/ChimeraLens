@@ -21,12 +21,7 @@ export interface PaginatedResult<T> {
  * @param limit - The number of items per page.
  * @returns A structured paginated result object.
  */
-export function paginate<T>(
-  items: T[],
-  total: number,
-  page: number,
-  limit: number,
-): PaginatedResult<T> {
+export function paginate<T>(items: T[], total: number, page: number, limit: number): PaginatedResult<T> {
   const lastPage = Math.ceil(total / limit);
   return {
     data: items,
