@@ -54,7 +54,8 @@ export default function Home() {
     generate({
       sourceImage: sourceFile,
       templateImageUrl: selectedTemplate.imageUrl,
-      modelKey: 'stable-swap-v1' // 使用我们配置好的稳定模型
+      // modelKey: 'stable-swap-v1' // 使用我们配置好的稳定模型
+      modelKey: 'unstable-swap-v2' // 使用我们配置好的稳定模型
     });
   };
 
