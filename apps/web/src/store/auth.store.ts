@@ -11,11 +11,17 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
-      setToken: (token) => set({ token }),
-      logout: () => set({ token: null }),
+      setToken: (token) => {
+        // 登录成功时，也清除 guestId
+        localStorage.removeItem("guestId");
+        set({ token });
+      },
+      logout: () => {
+        // 登出时，同时清除 token 和 guestId
+        localStorage.removeItem("guestId");
+        set({ token: null });
+      },
     }),
-    {
-      name: "auth-storage", // 在 localStorage 中的 key
-    }
+    { name: "auth-storage" }
   )
 );

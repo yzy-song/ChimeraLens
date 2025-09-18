@@ -66,7 +66,7 @@ export const TEMPLATES_DATA: Template[] = [
   },
   {
     id: 'iod-portrait-001',
-    name: '优化肖像',
+    name: '油画肖像',
     style: '复古油画',
     imageUrl:
       'https://res.cloudinary.com/deaxv6w30/image/upload/v1758207263/Gemini_Generated_Image_ns6z8lns6z8lns6z_ooph5v.png', // 待填充

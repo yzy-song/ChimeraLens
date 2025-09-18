@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { AuthButton } from '@/components/auth-button';
+import { UserNav } from '@/components/user-nav';
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -71,7 +71,7 @@ export default function Home() {
               ✨ Credits: {user?.credits ?? '...'}
             </div>
           )}
-          {isClient && <AuthButton />} {/* <-- 在这里添加登录/登出按钮 */}
+          {isClient && <UserNav />}
         </div>
       </header>
 

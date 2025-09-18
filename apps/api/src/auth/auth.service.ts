@@ -145,59 +145,61 @@ export class AuthService {
     this.logger.log('Firebase 登录请求');
     try {
       const decodedToken = await this.firebaseAdmin.auth.verifyIdToken(idToken);
-      const { email, name, uid } = decodedToken;
+      const { email, name } = decodedToken;
 
-      this.logger.log(`Firebase token 验证成功: uid=${uid}, email=${email}`);
       if (!email) {
-        this.logger.warn('Firebase token 缺少 email');
         throw new UnauthorizedException('Firebase token is missing email.');
       }
+      this.logger.log(`Firebase token 验证成功: email=${email}`);
 
-      // 1. 检查是否存在需要升级的游客账户
+      // 1. 优先查找是否已存在该 email 的正式用户
+      let user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (user) {
+        // 如果用户已存在且是正式用户，直接登录
+        if (!user.isGuest) {
+          this.logger.log(`Firebase 登录成功: 已存在的正式用户, email=${email}`);
+          return this._createToken(user);
+        }
+      }
+
+      // 2. 如果不存在正式用户，再检查是否有可升级的游客
       const guestId = this.request.headers['x-guest-id'] as string;
       const guestUser = guestId ? await this.prisma.user.findUnique({ where: { guestId } }) : null;
 
       if (guestUser) {
-        // 2. 如果存在游客账户，直接升级它
+        // 升级游客账户
         this.logger.log(`升级游客账户: guestId=${guestId}, with firebaseEmail=${email}`);
-        const updatedUser = await this.prisma.user.update({
+        user = await this.prisma.user.update({
           where: { id: guestUser.id },
-          data: {
-            email,
-            name: name || guestUser.name,
-            isGuest: false,
-            guestId: null, // 清空 guestId
-          },
+          data: { email, name: name || guestUser.name, isGuest: false, guestId: null },
         });
-        return this._createToken(updatedUser);
+        return this._createToken(user);
       }
 
-      // 3. 如果没有游客账户，再走原来的逻辑：通过 email 查找或创建
-      let user = await this.prisma.user.findUnique({ where: { email } });
+      // 3. 如果以上情况都不是，创建一个全新的用户
+      this.logger.log(`创建全新 Firebase 用户: email=${email}`);
+      const randomPassword = randomBytes(16).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          name: name || 'Firebase User',
+          password: hashedPassword,
+          isGuest: false,
+          credits: 10,
+        },
+      });
 
-      if (!user) {
-        this.logger.log(`未找到游客，创建全新 Firebase 用户: email=${email}`);
-        // Firebase 用户没有密码，我们可以存一个随机哈希值
-        const randomPassword = randomBytes(16).toString('hex');
-        const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-        user = await this.prisma.user.create({
-          data: {
-            email,
-            name: name || 'Firebase User',
-            password: hashedPassword,
-            isGuest: false, // 创建的就是注册用户
-            credits: 10, // 新用户赠送点数
-          },
-        });
-      }
-
-      this.logger.log(`Firebase 登录成功: userId=${user.id}, email=${email}`);
       return this._createToken(user);
     } catch (error) {
-      const err = error as Error;
-      this.logger.error('Firebase 登录失败', err.stack);
-      throw new UnauthorizedException('Invalid Firebase token.');
+      if (error instanceof Error) {
+        this.logger.error('Firebase 登录失败', error.stack ?? error.message);
+      } else {
+        this.logger.error('Firebase 登录失败', String(error));
+      }
+      if (error instanceof UnauthorizedException || error instanceof ConflictException) throw error;
+      throw new UnauthorizedException('Invalid Firebase token or login failed.');
     }
   }
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 
 export const api = axios.create({
@@ -37,22 +38,27 @@ api.interceptors.request.use(
  * 全局处理 API 错误，特别是 401 权限问题。
  */
 api.interceptors.response.use(
-  (response) => response, // 成功的响应直接透传
+  (response) => response,
   (error) => {
-    // 统一处理错误
     if (error.response?.status === 401) {
-      // 如果是 401 错误，通常意味着 token 失效
-      // 这里可以触发全局的登出逻辑
-      // useAuthStore.getState().logout();
-      console.error("Authentication Error: Token might be expired or invalid.");
+      const errorMessage =
+        error.response?.data?.message ||
+        "Authentication failed. Please check your credentials.";
+
+      // 只有 token 失效时才登出
+      if (
+        errorMessage.includes("expired") ||
+        errorMessage.includes("invalid token")
+      ) {
+        useAuthStore.getState().logout();
+      }
+
+      return Promise.reject(new Error(errorMessage));
     }
 
-    // 从后端响应中提取更具体的错误信息，如果没有则给一个通用提示
     const errorMessage =
       error.response?.data?.message ||
       "An unexpected error occurred. Please try again.";
-
-    // 以 Error 的形式拒绝 Promise，这样 React Query 的 isError 状态就会被激活
     return Promise.reject(new Error(errorMessage));
   }
 );

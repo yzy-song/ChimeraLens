@@ -121,3 +121,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 隐藏 Edge 和 IE 浏览器自带的密码显示图标 */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/* 隐藏 Webkit 浏览器（如 Chrome）的密码自动填充图标旁边的UI，
+   虽然不一定能去掉所有浏览器UI，但这是最常用的做法 */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

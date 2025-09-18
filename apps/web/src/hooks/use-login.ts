@@ -4,29 +4,30 @@ import { api } from "@/lib/api";
 import { ApiResponse } from "@/types";
 import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
+import { z } from "zod";
+import { loginSchema } from "@/lib/schemas/auth.schema";
 
-export interface LoginResponse {
+interface LoginResponse {
   access_token: string;
 }
 
-const firebaseLogin = async (
-  idToken: string
+const login = async (
+  payload: z.infer<typeof loginSchema>
 ): Promise<ApiResponse<LoginResponse>> => {
-  const { data } = await api.post("/auth/firebase-login", { idToken });
+  const { data } = await api.post("/auth/login", payload);
   return data;
 };
 
-export function useFirebaseLogin() {
+export function useLogin() {
   const queryClient = useQueryClient();
   const setToken = useAuthStore((state) => state.setToken);
 
   return useMutation({
-    mutationFn: firebaseLogin,
+    mutationFn: login,
     onSuccess: (response) => {
       const token = response.data.access_token;
-      setToken(token); // 将我们自己的 token 存入 store
+      setToken(token);
       toast.success("Login successful!");
-      // 重新获取用户信息，以更新 UI
       queryClient.invalidateQueries({ queryKey: ["me"] });
     },
     onError: (error) => {
