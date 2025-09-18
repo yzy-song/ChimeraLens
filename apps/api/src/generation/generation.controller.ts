@@ -41,14 +41,11 @@ export class GenerationController {
     )
     sourceImage: Express.Multer.File,
     @Body('templateImageUrl') templateImageUrl: string,
-    @Body('provider') provider: string = 'replicate', // replicate 或 'huggingface'，根据实际需求选择
+    @Body('modelKey') modelKey: string,
   ) {
-    return this.generationService.createGeneration(
-      req.user,
-      sourceImage,
-      templateImageUrl,
-      provider, // 这里可以根据需要选择 'replicate' 或 'huggingface'
-      // modelId // 未来可以传入具体模型ID
-    );
+    if (!req.user) {
+      throw new Error('User not found...');
+    }
+    return this.generationService.createGeneration(req.user, sourceImage, templateImageUrl, modelKey);
   }
 }

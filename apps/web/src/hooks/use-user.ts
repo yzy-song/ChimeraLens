@@ -10,7 +10,6 @@ interface UserData {
 
 const getMe = async (): Promise<ApiResponse<UserData>> => {
   const { data } = await api.get("/auth/me");
-  console.log("Fetched /auth/me:", data);
   return data;
 };
 

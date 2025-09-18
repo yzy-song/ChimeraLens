@@ -11,13 +11,7 @@ import { TemplatesModule } from './templates/templates.module';
 import { AppLogger } from './common/utils/logger';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,
-    GenerationModule,
-    AuthModule,
-    TemplatesModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, GenerationModule, AuthModule, TemplatesModule],
   controllers: [AppController],
   providers: [AppService, AppLogger],
 })

@@ -10,7 +10,6 @@ export class AuthController {
   getProfile(@Req() req: RequestWithUser) {
     // 直接返回中间件附加的 user 对象
     // 如果 req.user 不存在 (例如前端没发送 x-guest-id)，则返回 null
-    console.log('req.user:', req.user);
     return { user: req.user || null };
   }
 }

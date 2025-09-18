@@ -1,94 +1,107 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { MODELS } from './models.config';
+import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@chimeralens/db';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
-
 import { ReplicateProvider } from './providers/replicate.provider';
-import { HuggingFaceProvider } from './providers/huggingface.provider';
-import Replicate from 'replicate';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 import { paginate } from 'src/common/utils/pagination.util';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 @Injectable()
 export class GenerationService {
-  private replicate: Replicate;
+  private readonly logger = new Logger(GenerationService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    // 我们现在只注入 ReplicateProvider
     private readonly replicateProvider: ReplicateProvider,
-    private readonly huggingFaceProvider: HuggingFaceProvider,
   ) {
-    // 配置 Cloudinary
     cloudinary.config({
       cloud_name: this.configService.get<string>('CLOUDINARY_CLOUD_NAME'),
       api_key: this.configService.get<string>('CLOUDINARY_API_KEY'),
       api_secret: this.configService.get<string>('CLOUDINARY_API_SECRET'),
     });
-
-    // 初始化 Replicate 客户端
-    this.replicate = new Replicate({
-      auth: this.configService.get<string>('REPLICATE_API_TOKEN'),
-    });
   }
 
-  // 将 Buffer 上传到 Cloudinary
-  private async uploadImage(fileBuffer: Buffer): Promise<UploadApiResponse> {
+  // 上传用户本地图片 Buffer
+  private async uploadImageFromBuffer(fileBuffer: Buffer): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ resource_type: 'image' }, (error, result) => {
-          if (error) return reject(new Error(error.message || String(error)));
-          resolve(result);
-        })
+        .upload_stream(
+          {
+            resource_type: 'image',
+            folder: 'chimeralens/user_uploads',
+          },
+          (error, result) => {
+            if (error) return reject(new Error(error.message || String(error)));
+            if (!result) return reject(new Error('Cloudinary upload failed.'));
+            resolve(result);
+          },
+        )
         .end(fileBuffer);
     });
   }
 
-  async createGeneration(
-    user: User,
-    sourceImage: Express.Multer.File,
-    templateImageUrl: string,
-    provider: string,
-    // 将来我们可以传入模型ID来选择不同的模型
-    // modelId: string
-  ) {
+  /**
+   * 从一个远程 URL 上传图片到 Cloudinary (用于转存 Replicate 的结果只有1小时有效期)
+   * @param imageUrl - 来源图片 URL (例如 Replicate 的临时 URL)
+   * @returns Cloudinary 的上传结果
+   */
+  private async uploadImageFromUrl(imageUrl: string): Promise<UploadApiResponse> {
+    try {
+      this.logger.log(`Transferring image from URL to Cloudinary: ${imageUrl}`);
+      const result = await cloudinary.uploader.upload(imageUrl, {
+        folder: 'chimeralens/results', // 我们为最终结果创建一个新的文件夹
+      });
+      this.logger.log('Image transferred to Cloudinary successfully.');
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to transfer image from URL to Cloudinary', error);
+      throw new Error('Failed to save the generated image.');
+    }
+  }
+
+  async createGeneration(user: User, sourceImage: Express.Multer.File, templateImageUrl: string, modelKey: string) {
     if (user.credits <= 0) {
       throw new ForbiddenException('Insufficient credits');
     }
 
-    const sourceImageUrl = (await this.uploadImage(sourceImage.buffer)).secure_url;
-
-    // 1. 定义要使用的模型和输入
-    const modelId = 'cdingram/face-swap:d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111';
-
-    const modelInput = {
-      target_image: templateImageUrl,
-      swap_image: sourceImageUrl,
-    };
-
-    // 2. 调用 Replicate 或者 HuggingFace Provider
-    let output;
-    console.log('Using provider:', provider);
-    if (provider === 'replicate') {
-      output = await this.replicateProvider.run({
-        model: modelId,
-        input: modelInput,
-      });
-    } else if (provider === 'huggingface') {
-      output = await this.huggingFaceProvider.run({
-        model: modelId,
-        input: modelInput,
-      });
-    } else {
-      throw new Error('Unsupported AI provider.');
+    // 从配置文件中查找模型;
+    const modelConfig = MODELS[modelKey];
+    if (!modelConfig) {
+      throw new Error(`Model with key '${modelKey}' not found.`);
     }
-    const resultImageUrl = Array.isArray(output) ? output[0] : output;
+    // 1. 上传用户原图
+    const sourceImageUrl = (await this.uploadImageFromBuffer(sourceImage.buffer)).secure_url;
 
-    if (!resultImageUrl) {
-      throw new Error('AI generation failed.');
+    const modelInput = modelConfig.formatInput({ templateImageUrl, sourceImageUrl });
+    const modelId = modelConfig.id;
+
+    this.logger.log('--- Sending to Replicate ---');
+    this.logger.log('Model ID:', modelId);
+    this.logger.log('Model Input:', modelInput);
+
+    // 2. 调用 Replicate 模型
+    const replicateOutput = await this.replicateProvider.run({
+      model: modelId,
+      input: modelInput,
+    });
+
+    const temporaryResultUrl = Array.isArray(replicateOutput) ? replicateOutput[0] : replicateOutput;
+
+    if (!temporaryResultUrl || typeof temporaryResultUrl !== 'string') {
+      this.logger.error('Could not parse a valid URL from Replicate output', replicateOutput);
+      throw new Error('AI generation failed to return a valid image URL.');
     }
 
+    // 👇 --- 核心逻辑变化 --- 👇
+    // 3. 将 Replicate 的临时结果图转存到我们自己的 Cloudinary
+    const finalImage = await this.uploadImageFromUrl(temporaryResultUrl);
+    const resultImageUrl = finalImage.secure_url; // <-- 这是我们永久的、自己的 URL
+
+    // 4. 将我们自己的永久 URL 存入数据库
     const [updatedUser, newGeneration] = await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
@@ -99,7 +112,7 @@ export class GenerationService {
           userId: user.id,
           sourceImageUrl,
           templateImageUrl,
-          resultImageUrl,
+          resultImageUrl, // <-- 保存的是永久的 Cloudinary URL
         },
       }),
     ]);
