@@ -5,7 +5,6 @@ import imageCompression from 'browser-image-compression';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Camera, Upload } from 'lucide-react';
-import { CameraModal } from './camera-modal'; // <-- 1. 导入相机弹窗
 
 export interface ImageUploaderProps {
   onFileSelect: (file: File | null) => void;
@@ -14,16 +13,11 @@ export interface ImageUploaderProps {
 export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCameraOpen, setIsCameraOpen] = useState(false); 
-  const [isCameraSupported, setIsCameraSupported] = useState(false);
+  
+  // 1. 我们需要两个 ref，分别对应两个 input
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // 检查浏览器是否支持摄像头 API
-  useEffect(() => {
-    if (navigator.mediaDevices && 'getUserMedia' in navigator.mediaDevices) {
-      setIsCameraSupported(true);
-    }
-  }, []);
   const processFile = async (file: File) => {
     setIsLoading(true);
     onFileSelect(null);
@@ -43,18 +37,15 @@ export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
     }
   };
 
+  // 2. 两个 input 共用同一个处理函数
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       processFile(file);
     }
+    // 清空 input 的值，确保下次选择相同文件也能触发 onChange
+    event.target.value = '';
   };
-  
-  const handlePhotoCapture = (file: File) => {
-    if (file) {
-      processFile(file);
-    }
-  }
 
   useEffect(() => {
     return () => {
@@ -65,46 +56,46 @@ export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
   }, [previewUrl]);
 
   return (
-    <>
-      <div className="w-full p-4 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept="image/png, image/jpeg, image/webp"
-          disabled={isLoading}
-        />
-        {isLoading ? (
-          <div className="flex items-center justify-center h-40">
-             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-          </div>
-        ) : previewUrl ? (
-          <img src={previewUrl} alt="Image preview" className="h-40 w-40 rounded-full object-cover" />
-        ) : (
-          <div className="flex items-center justify-center h-40 text-gray-500">
-            Your photo preview
-          </div>
-        )}
-        
-        <div className="grid grid-cols-2 gap-4 mt-4 w-full">
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload File
-            </Button>
-            {isCameraSupported && (
-              <Button variant="outline" onClick={() => setIsCameraOpen(true)} disabled={isLoading}>
-                <Camera className="mr-2 h-4 w-4" />
-                Take Photo
-              </Button>
-            )}
-        </div>
-      </div>
-      <CameraModal 
-        isOpen={isCameraOpen} 
-        onClose={() => setIsCameraOpen(false)} 
-        onPhotoCapture={handlePhotoCapture}
+    <div className="w-full p-4 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center">
+      {/* 3. 两个隐藏的 input 元素 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/png, image/jpeg, image/webp"
       />
-    </>
+      <input
+        type="file"
+        ref={cameraInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*"
+        capture="user" // <-- 核心属性，用于调用前置摄像头
+      />
+
+      {/* 预览区域 */}
+      <div className="w-full h-40 flex items-center justify-center mb-4">
+        {isLoading ? (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        ) : previewUrl ? (
+          <img src={previewUrl} alt="Image preview" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <div className="text-gray-500">Your photo preview</div>
+        )}
+      </div>
+      
+      {/* 操作按钮 */}
+      <div className="grid grid-cols-2 gap-4 w-full">
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload File
+          </Button>
+          <Button variant="outline" onClick={() => cameraInputRef.current?.click()} disabled={isLoading}>
+              <Camera className="mr-2 h-4 w-4" />
+              Take Photo
+          </Button>
+      </div>
+    </div>
   );
 }
