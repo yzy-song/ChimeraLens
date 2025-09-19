@@ -54,8 +54,8 @@ export default function Home() {
     }
     generate({
       sourceImage: sourceFile,
-      templateImageUrl: selectedTemplate.imageUrl,
-      modelKey: 'unstable-swap-v2',
+      templateId: selectedTemplate.id,
+      modelKey: 'sepehr-mirage',
     });
   };
 

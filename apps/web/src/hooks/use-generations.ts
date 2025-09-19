@@ -1,3 +1,4 @@
+// 负责获取和展示作品集列表
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -25,7 +26,7 @@ const getGenerations = async ({
   page,
   limit,
 }: GetGenerationsQuery): Promise<ApiResponse<PaginatedGenerations>> => {
-  const { data } = await api.get("/generation", {
+  const { data } = await api.get("/generations", {
     params: { page, limit },
   });
   console.log("Fetched generations:", data);

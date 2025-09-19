@@ -9,6 +9,7 @@ export interface Template {
   name: string;
   style: string;
   imageUrl: string;
+  isPremium?: boolean;
 }
 
 // 获取模板列表的 API 函数

@@ -1,3 +1,4 @@
+// 负责创建一个新的图片生成任务
 "use client";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -12,7 +13,7 @@ interface GenerationResult {
 // 定义调用 mutation 时需要传入的参数类型
 interface GenerationPayload {
   sourceImage: File;
-  templateImageUrl: string;
+  templateId: string;
   modelKey: string;
 }
 
@@ -23,9 +24,9 @@ const createGeneration = async (
   // 文件上传需要使用 FormData
   const formData = new FormData();
   formData.append("sourceImage", payload.sourceImage);
-  formData.append("templateImageUrl", payload.templateImageUrl);
+  formData.append("templateId", payload.templateId);
   formData.append("modelKey", payload.modelKey);
-  const { data } = await api.post("/generation", formData, {
+  const { data } = await api.post("/generations", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },

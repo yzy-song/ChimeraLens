@@ -6,6 +6,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 import { ReplicateProvider } from './providers/replicate.provider';
 
+import { TEMPLATES_DATA } from '../templates/templates.data';
+import { NotFoundException } from '@nestjs/common';
 import { paginate } from 'src/common/utils/pagination.util';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 @Injectable()
@@ -63,7 +65,23 @@ export class GenerationService {
     }
   }
 
-  async createGeneration(user: User, sourceImage: Express.Multer.File, templateImageUrl: string, modelKey: string) {
+  async createGeneration(
+    user: User,
+    sourceImage: Express.Multer.File,
+    templateId: string,
+    modelKey: string,
+    options?: Record<string, any>,
+  ) {
+    const template = TEMPLATES_DATA.find((t) => t.id === templateId);
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    // 2. 检查模板是否为高级以及用户是否为游客
+    if (template.isPremium && user.isGuest) {
+      throw new ForbiddenException('This is a premium template. Please log in or register to use it.');
+    }
+
     if (user.credits <= 0) {
       throw new ForbiddenException('Insufficient credits');
     }
@@ -76,7 +94,7 @@ export class GenerationService {
     // 1. 上传用户原图
     const sourceImageUrl = (await this.uploadImageFromBuffer(sourceImage.buffer)).secure_url;
 
-    const modelInput = modelConfig.formatInput({ templateImageUrl, sourceImageUrl });
+    const modelInput = modelConfig.formatInput({ templateImageUrl: template.imageUrl, sourceImageUrl }, options);
     const modelId = modelConfig.id;
 
     this.logger.log('--- Sending to Replicate ---');
@@ -111,7 +129,7 @@ export class GenerationService {
         data: {
           userId: user.id,
           sourceImageUrl,
-          templateImageUrl,
+          templateImageUrl: template.imageUrl,
           resultImageUrl, // <-- 保存的是永久的 Cloudinary URL
         },
       }),
@@ -128,7 +146,6 @@ export class GenerationService {
     const skip = (page - 1) * limit;
 
     const whereClause = { userId: userId };
-    this.logger.log('findAll whereClause:', whereClause);
     const [items, total] = await this.prisma.$transaction([
       this.prisma.generation.findMany({
         where: whereClause,

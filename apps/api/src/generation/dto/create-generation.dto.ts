@@ -1,11 +1,20 @@
-import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsString, IsObject, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateGenerationDto {
-  @IsUrl() // 校验这个字段必须是一个合法的 URL 地址
-  @IsNotEmpty() // 校验这个字段不能为空
-  templateImageUrl: string;
+  // 不再需要 templateImageUrl
+  // @IsUrl()
+  // @IsNotEmpty()
+  // templateImageUrl: string;
 
-  @IsString() // 校验这个字段必须是字符串
+  @IsString()
+  @IsNotEmpty()
+  templateId: string; // <-- 改为接收 templateId这样后端就能获取到模板的所有信息（包括 isPremium 状态）。
+
+  @IsString()
   @IsNotEmpty()
   modelKey: string;
+
+  @IsObject()
+  @IsOptional()
+  options?: Record<string, any>;
 }

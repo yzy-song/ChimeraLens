@@ -2,6 +2,7 @@
 
 import { useTemplates, Template } from '@/hooks/use-templates';
 import Image from 'next/image';
+import { Crown } from 'lucide-react';
 
 // 定义组件的 props 类型
 interface TemplateGalleryProps {
@@ -36,6 +37,11 @@ export function TemplateGallery({ onSelectTemplate, selectedTemplateId }: Templa
               ${selectedTemplateId === template.id ? 'ring-4 ring-blue-500' : 'ring-2 ring-transparent hover:ring-blue-400'}
             `}
           >
+            {template.isPremium && (
+              <div className="absolute top-2 right-2 z-10 rounded-full bg-yellow-500 p-1.5 text-white">
+                <Crown className="h-4 w-4" />
+              </div>
+            )}
             <Image
               src={template.imageUrl}
               alt={template.name}

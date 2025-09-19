@@ -6,14 +6,15 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Generation } from '@chimeralens/db';
 
 export default function GalleryPage() {
   const [page, setPage] = useState(1);
-  const limit = 8; // 每页显示8张图片
+  const limit = 8;
 
   const { data: response, isLoading, isError, error } = useGenerations({ page, limit });
 
-  const generations = response?.data || [];
+  const generations: Generation[] = Array.isArray(response?.data) ? response.data : [];
   const meta = response?.meta;
 
   return (

@@ -3,6 +3,7 @@ export interface Template {
   name: string;
   style: string;
   imageUrl: string;
+  isPremium?: boolean;
 }
 
 export const TEMPLATES_DATA: Template[] = [
@@ -13,6 +14,7 @@ export const TEMPLATES_DATA: Template[] = [
     style: '骑士',
     imageUrl:
       'https://res.cloudinary.com/deaxv6w30/image/upload/v1758208567/Gemini_Generated_Image_o0a6hco0a6hco0a6_ypq1cx.png',
+    isPremium: true,
   },
   {
     id: 'cyberpunk-002',

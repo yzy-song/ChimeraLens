@@ -30,7 +30,7 @@ import { paginate } from 'src/common/utils/pagination.util';
 
 @ApiTags('图像生成')
 @UseGuards(ThrottlerGuard) // 应用速率限制守卫
-@Controller('generation')
+@Controller('generations')
 export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
 
@@ -72,8 +72,9 @@ export class GenerationController {
     return this.generationService.createGeneration(
       req.user,
       sourceImage,
-      createGenerationDto.templateImageUrl,
+      createGenerationDto.templateId,
       createGenerationDto.modelKey,
+      createGenerationDto.options,
     );
   }
 }
