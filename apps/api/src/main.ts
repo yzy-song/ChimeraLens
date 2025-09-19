@@ -72,7 +72,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
 
   // 只对webhook路由使用 raw body
-  app.use('/webhooks/stripe', bodyParser.raw({ type: 'application/json' }));
+  app.use('/billing/webhooks', bodyParser.raw({ type: 'application/json' }));
   // 7. 启动应用
   await app.listen(port, '0.0.0.0');
 

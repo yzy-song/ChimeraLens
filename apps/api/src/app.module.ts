@@ -14,6 +14,7 @@ import { FirebaseAdminModule } from './common/firebase/firebase-admin.module';
 import { AppLogger } from './common/utils/logger';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // <-- 1. 导入
 import { APP_GUARD } from '@nestjs/core';
+import { BillingModule } from './billing/billing.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -30,6 +31,7 @@ import { APP_GUARD } from '@nestjs/core';
     UsersModule,
     FirebaseAdminModule,
     AuthModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

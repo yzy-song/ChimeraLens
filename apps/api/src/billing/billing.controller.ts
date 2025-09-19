@@ -1,0 +1,22 @@
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { BillingService } from './billing.service';
+import { AuthGuard } from '@nestjs/passport';
+import { User as UserModel } from '@chimeralens/db';
+
+import { User } from 'src/auth/decorators/user.decorator';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
+
+@ApiTags('Billing')
+@Controller('billing')
+@UseGuards(AuthGuard('jwt'))
+export class BillingController {
+  constructor(private readonly billingService: BillingService) {}
+
+  @Post('create-checkout-session')
+  @ApiOperation({ summary: 'Create Stripe Checkout Session' })
+  @ApiCommonResponses()
+  createCheckoutSession(@User() user: UserModel, @Body('priceId') priceId: string) {
+    return this.billingService.createCheckoutSession(user, priceId);
+  }
+}
