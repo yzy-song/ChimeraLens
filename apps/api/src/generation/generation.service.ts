@@ -128,7 +128,7 @@ export class GenerationService {
     const skip = (page - 1) * limit;
 
     const whereClause = { userId: userId };
-
+    this.logger.log('findAll whereClause:', whereClause);
     const [items, total] = await this.prisma.$transaction([
       this.prisma.generation.findMany({
         where: whereClause,
