@@ -37,7 +37,7 @@ export default function GalleryPage() {
         {isError && <p className="text-red-500">Error: {error.message}</p>}
 
         {!isLoading && generations.length === 0 && (
-          <p>You haven't created any images yet. <Link href="/" className="text-blue-500 hover:underline">Start creating now!</Link></p>
+          <p>You haven&#39;t created any images yet. <Link href="/" className="text-blue-500 hover:underline">Start creating now!</Link></p>
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
