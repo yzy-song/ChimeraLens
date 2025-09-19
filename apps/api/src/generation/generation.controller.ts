@@ -23,6 +23,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
 
 import { JwtOptionalGuard } from 'src/auth/guards/jwt-optional.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { User } from 'src/auth/decorators/user.decorator';
+import { User as UserModel } from '@chimeralens/db';
+import { paginate } from 'src/common/utils/pagination.util';
 
 @ApiTags('图像生成')
 @UseGuards(ThrottlerGuard) // 应用速率限制守卫
@@ -31,13 +35,15 @@ export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
 
   @Get()
-  @ApiBearerAuth() // 表明需要 Bearer Token 认证
-  @ApiOperation({ summary: '获取生成记录列表' })
-  @ApiResponse({ status: 200, description: '返回生成记录列表' })
-  @ApiCommonResponses()
-  findAll(@Query() paginationDto: PaginationDto) {
-    // <-- 直接使用
-    return this.generationService.findAll(paginationDto);
+  @ApiOperation({ summary: '获取当前用户的生成历史' })
+  @ApiBearerAuth()
+  @UseGuards(JwtOptionalGuard)
+  findAll(@User() user: UserModel, @Query() paginationDto: PaginationDto) {
+    if (!user) {
+      // 如果既没有 guest-id 也没有 token，则返回空列表
+      return paginate([], 0, paginationDto.page, paginationDto.limit);
+    }
+    return this.generationService.findAll(user.id, paginationDto);
   }
 
   @Post()

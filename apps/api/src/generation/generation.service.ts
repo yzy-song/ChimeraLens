@@ -123,15 +123,26 @@ export class GenerationService {
     };
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(userId: string, paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     const skip = (page - 1) * limit;
 
+    const whereClause = { userId: userId };
+
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.generation.findMany({ skip, take: limit }),
-      this.prisma.generation.count(),
+      this.prisma.generation.findMany({
+        where: whereClause,
+        skip: skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.generation.count({
+        where: whereClause,
+      }),
     ]);
 
-    return paginate(items, total, page, limit); // <-- 使用你的分页工具函数
+    return paginate(items, total, page, limit);
   }
 }
