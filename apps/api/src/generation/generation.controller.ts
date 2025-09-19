@@ -22,14 +22,16 @@ import { CreateGenerationDto } from './dto/create-generation.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
 
+import { JwtOptionalGuard } from 'src/auth/guards/jwt-optional.guard';
+
 @ApiTags('图像生成')
-@ApiBearerAuth() // 表明需要 Bearer Token 认证
 @UseGuards(ThrottlerGuard) // 应用速率限制守卫
 @Controller('generation')
 export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
 
   @Get()
+  @ApiBearerAuth() // 表明需要 Bearer Token 认证
   @ApiOperation({ summary: '获取生成记录列表' })
   @ApiResponse({ status: 200, description: '返回生成记录列表' })
   @ApiCommonResponses()
@@ -39,6 +41,7 @@ export class GenerationController {
   }
 
   @Post()
+  @UseGuards(JwtOptionalGuard)
   @ApiOperation({ summary: '创建新的图像生成请求' })
   @ApiResponse({ status: 201, description: '图像生成请求已创建' })
   @ApiCommonResponses()

@@ -5,11 +5,11 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
 
 @ApiTags('Billing')
-@Controller('billing/webhooks')
+@Controller('webhooks/stripe')
 export class StripeWebhookController {
   constructor(private readonly webhookService: StripeWebhookService) {}
 
-  @Post('stripe')
+  @Post()
   @ApiOperation({ summary: 'Handle Stripe Webhook Events' })
   @ApiCommonResponses()
   async handleStripeWebhook(@Headers('stripe-signature') signature: string, @Req() req: Request) {

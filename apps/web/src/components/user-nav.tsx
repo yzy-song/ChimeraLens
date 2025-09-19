@@ -4,6 +4,8 @@ import { Button } from './ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useState } from 'react';
 import { AuthModal } from './auth-modal';
+
+import { BillingModal } from './billing-modal'; 
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
@@ -15,36 +17,49 @@ export function UserNav() {
   const { logout, token } = useAuthStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+
   // 如果用户已登录
   if (token && user && !user.isGuest) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>{user.name?.[0] || user.email?.[0]}</AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => logout()}>Log out</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>{user.name?.[0] || user.email?.[0]}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user.name}</p>
+                <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setIsBillingModalOpen(true)}>
+              Buy Credits
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>Log out</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <BillingModal open={isBillingModalOpen} onOpenChange={setIsBillingModalOpen} />
+      </>
     )
   }
 
   // 如果是游客
   return (
     <>
-      <Button onClick={() => setIsModalOpen(true)}>Login</Button>
+      <div className="flex items-center gap-2">
+        <Button onClick={() => setIsBillingModalOpen(true)} variant="outline">Buy Credits</Button> {/* <-- 3. 添加购买按钮 */}
+        <Button onClick={() => setIsModalOpen(true)}>Login</Button>
+      </div>
       <AuthModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <BillingModal open={isBillingModalOpen} onOpenChange={setIsBillingModalOpen} /> 
+  
     </>
   );
 }

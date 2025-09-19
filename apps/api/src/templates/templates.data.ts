@@ -8,11 +8,11 @@ export interface Template {
 export const TEMPLATES_DATA: Template[] = [
   // --- 赛博朋克风格 (Cyberpunk) ---
   {
-    id: 'cyberpunk-001',
-    name: '机械义体黑客',
-    style: '赛博朋克',
+    id: 'Knights',
+    name: '骑士',
+    style: '骑士',
     imageUrl:
-      'https://res.cloudinary.com/deaxv6w30/image/upload/v1758207264/Gemini_Generated_Image_yslyeayslyeaysly_yopnmr.png',
+      'https://res.cloudinary.com/deaxv6w30/image/upload/v1758208567/Gemini_Generated_Image_o0a6hco0a6hco0a6_ypq1cx.png',
   },
   {
     id: 'cyberpunk-002',

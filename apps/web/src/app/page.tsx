@@ -55,7 +55,7 @@ export default function Home() {
     generate({
       sourceImage: sourceFile,
       templateImageUrl: selectedTemplate.imageUrl,
-      modelKey: 'stable-swap-v1',
+      modelKey: 'unstable-swap-v2',
     });
   };
 
