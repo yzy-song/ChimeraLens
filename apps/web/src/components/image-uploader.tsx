@@ -86,14 +86,14 @@ export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
       </div>
       
       {/* 操作按钮 */}
-      <div className="grid grid-cols-2 gap-4 w-full">
-          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+      <div className="flex items-center justify-center gap-4 w-full"> {/* <-- 将 grid grid-cols-2 改为 flex */}
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="flex-1">
               <Upload className="mr-2 h-4 w-4" />
-              Upload File
+              Upload
           </Button>
-          <Button variant="outline" onClick={() => cameraInputRef.current?.click()} disabled={isLoading}>
+          <Button variant="outline" onClick={() => cameraInputRef.current?.click()} disabled={isLoading} className="flex-1">
               <Camera className="mr-2 h-4 w-4" />
-              Take Photo
+              Photo
           </Button>
       </div>
     </div>
