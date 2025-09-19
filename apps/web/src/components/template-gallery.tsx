@@ -1,17 +1,25 @@
 'use client';
 
-import { useTemplates, Template } from '@/hooks/use-templates';
+import { Template } from '@/hooks/use-templates';
 import Image from 'next/image';
 import { Crown } from 'lucide-react';
 
 // 定义组件的 props 类型
 interface TemplateGalleryProps {
+  templates: Template[]; // 直接接收模板数组
+  isLoading: boolean;
+  isError: boolean;
   onSelectTemplate: (template: Template) => void;
   selectedTemplateId?: string;
 }
 
-export function TemplateGallery({ onSelectTemplate, selectedTemplateId }: TemplateGalleryProps) {
-  const { data: templatesResponse, isLoading, isError } = useTemplates();
+export function TemplateGallery({
+  templates,
+  isLoading,
+  isError,
+  onSelectTemplate,
+  selectedTemplateId
+}: TemplateGalleryProps) {
 
   if (isLoading) {
     return <div className="text-center">Loading templates...</div>;
@@ -21,11 +29,9 @@ export function TemplateGallery({ onSelectTemplate, selectedTemplateId }: Templa
     return <div className="text-center text-red-500">Failed to load templates.</div>;
   }
 
-  const templates = templatesResponse?.data || [];
-
   return (
     <div className="w-full max-w-4xl">
-      <h2 className="text-2xl font-bold mb-4 text-center">Choose a Template</h2>
+      <h2 className="text-2xl font-bold mb-4 text-center">1. Choose a Template</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {templates.map((template) => (
           <div

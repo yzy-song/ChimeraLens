@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { UserNav } from '@/components/user-nav';
+import { CategoryFilter } from '@/components/category-filter';
+import { useTemplates } from '@/hooks/use-templates';
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -23,6 +25,14 @@ export default function Home() {
   const user = userResponse?.data.user;
 
   const { mutate: generate, data: generationResponse, isPending, isError, error, isSuccess } = useGeneration();
+
+  // 分类相关
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const { data: templatesResponse, isLoading: areTemplatesLoading, isError: areTemplatesError } = useTemplates();
+  const allTemplates = templatesResponse?.data || [];
+  const filteredTemplates = activeCategory === 'All'
+    ? allTemplates
+    : allTemplates.filter(t => t.style === activeCategory);
 
   useEffect(() => {
     if (isError) {
@@ -79,7 +89,16 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {/* --- 左侧栏：模板和上传 --- */}
           <div className="flex flex-col items-center gap-8">
-            <TemplateGallery 
+            <h2 className="text-2xl font-bold text-center">1. Choose a Template Style</h2>
+            <CategoryFilter
+              templates={allTemplates}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+            />
+            <TemplateGallery
+              templates={filteredTemplates}
+              isLoading={areTemplatesLoading}
+              isError={areTemplatesError}
               selectedTemplateId={selectedTemplate?.id}
               onSelectTemplate={setSelectedTemplate}
             />

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,12 @@ export default function RootLayout({
       >
         <QueryProvider>
           {children}
+          <footer className="w-full p-4 text-center border-t text-sm text-gray-500">
+              <p>© {new Date().getFullYear()} ChimeraLens AI. All Rights Reserved.</p>
+              <Link href="/privacy" className="hover:underline">
+                Privacy Policy
+              </Link>
+            </footer>
           <Toaster richColors />
         </QueryProvider>
       </body>
