@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     "localhost",
     "127.0.0.1",
     // 还可以加上你常用的本地域名或其他IP
-    "192.168.1.78",
+    "https://6af84b4d47c9.ngrok-free.app",
     "192.168.1.148",
   ],
 };

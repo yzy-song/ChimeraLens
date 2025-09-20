@@ -162,4 +162,11 @@ export class GenerationService {
 
     return paginate(items, total, page, limit);
   }
+
+  async findOneById(id: string) {
+    this.logger.log(`Fetching generation by ID: ${id}`);
+    return this.prisma.generation.findUnique({
+      where: { id },
+    });
+  }
 }

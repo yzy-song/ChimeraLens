@@ -5,6 +5,8 @@ import {
   UploadedFile,
   Body,
   Req,
+  Param,
+  NotFoundException,
   Get,
   Query,
   ParseFilePipe,
@@ -23,7 +25,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
 
 import { JwtOptionalGuard } from 'src/auth/guards/jwt-optional.guard';
-import { AuthGuard } from '@nestjs/passport';
 import { User } from 'src/auth/decorators/user.decorator';
 import { User as UserModel } from '@chimeralens/db';
 import { paginate } from 'src/common/utils/pagination.util';
@@ -33,6 +34,18 @@ import { paginate } from 'src/common/utils/pagination.util';
 @Controller('generations')
 export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
+
+  @Get(':id')
+  @ApiOperation({ summary: '获取单个生成作品的详情' })
+  @ApiResponse({ status: 200, description: '返回作品详情' })
+  @ApiCommonResponses()
+  async findOneById(@Param('id') id: string) {
+    const generation = await this.generationService.findOneById(id);
+    if (!generation) {
+      throw new NotFoundException(`Generation with ID ${id} not found.`);
+    }
+    return generation;
+  }
 
   @Get()
   @ApiOperation({ summary: '获取当前用户的生成历史' })

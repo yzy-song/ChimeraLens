@@ -42,19 +42,21 @@ export default function GalleryPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {generations.map((gen) => (
-            <Card key={gen.id} className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="relative aspect-square">
-                  <Image
-                    src={gen.resultImageUrl}
-                    alt="Generated image"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={gen.id} href={`/gallery/${gen.id}`} passHref>
+              <Card className="overflow-hidden transition-transform hover:scale-105">
+                <CardContent className="p-0">
+                  <div className="relative aspect-square">
+                    <Image
+                      src={gen.resultImageUrl}
+                      alt="Generated image"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 
