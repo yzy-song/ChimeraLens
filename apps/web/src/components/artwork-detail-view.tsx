@@ -18,13 +18,13 @@ interface ArtworkDetailViewProps {
 export default function ArtworkDetailView({ id, initialData }: ArtworkDetailViewProps) {
   const { data: response, isLoading, isError, error } = useGenerationById(id);
 
-  const { mutate: download, isPending: isDownloading } = useDownloadGeneration();
+  const { download, isDownloading } = useDownloadGeneration();
 
   const generation = response?.data || initialData;
 
   const handleDownload = () => {
     if (generation.id) {
-      download(generation.id);
+      download(generation.id, `${title}.png`);
     }
   };
 

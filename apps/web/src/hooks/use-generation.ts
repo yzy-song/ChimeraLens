@@ -9,6 +9,7 @@ interface GenerationResult {
   id: string;
   resultImageUrl: string;
   credits: number;
+  optimizedUrl: string;
 }
 
 // 定义调用 mutation 时需要传入的参数类型
