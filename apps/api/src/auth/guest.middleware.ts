@@ -40,7 +40,6 @@ export class GuestMiddleware implements NestMiddleware {
       hasPassword: !!user.password,
     };
 
-    this.logger.log(`Guest user identified: ${user.id} (hasPassword: ${!!user.password})`);
     next();
   }
 }

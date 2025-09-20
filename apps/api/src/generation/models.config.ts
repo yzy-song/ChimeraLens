@@ -19,7 +19,7 @@ export const MODELS: Record<string, ModelConfig> = {
     id: 'codeplugtech/face-swap:278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34',
     // 即使这个模型用不到 options，我们也要在函数签名中定义它，以保持类型一致
     formatInput: ({ templateImageUrl, sourceImageUrl }, options = {}) => ({
-      target_image: templateImageUrl,
+      input_image: templateImageUrl,
       swap_image: sourceImageUrl,
     }),
   },

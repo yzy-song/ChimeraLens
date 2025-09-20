@@ -4,6 +4,7 @@ import { Template } from '@/hooks/use-templates';
 import Image from 'next/image';
 import { Crown } from 'lucide-react';
 import { Card } from './ui/card';
+import { Skeleton } from './ui/skeleton'; // 导入骨架屏组件
 
 interface TemplateGalleryProps {
   templates: Template[];
@@ -16,18 +17,31 @@ interface TemplateGalleryProps {
 export function TemplateGallery({
   templates, isLoading, isError, onSelectTemplate, selectedTemplateId
 }: TemplateGalleryProps) {
-  if (isLoading) return <div>Loading templates...</div>;
+  // 当加载时，显示骨架屏
+  if (isLoading) {
+    return (
+      <div className="w-full">
+        <div className="flex space-x-4 pb-4 overflow-x-auto">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="flex-shrink-0">
+              <Skeleton className="w-32 h-32 md:w-40 md:h-40 rounded-lg" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (isError) return <div className="text-red-500">Failed to load templates.</div>;
 
   return (
     <div className="w-full">
-      {/* 横向滚动容器 */}
       <div className="flex space-x-4 pb-4 overflow-x-auto">
         {templates.map((template) => (
           <div
             key={template.id}
             onClick={() => onSelectTemplate(template)}
-            className="flex-shrink-0" // <-- 防止图片被挤压
+            className="flex-shrink-0"
           >
             <Card className={`
               w-32 h-32 md:w-40 md:h-40 rounded-lg overflow-hidden cursor-pointer 

@@ -6,6 +6,7 @@ import { ApiResponse } from "@/types";
 
 // 定义 API 成功返回的数据结构
 interface GenerationResult {
+  id: string;
   resultImageUrl: string;
   credits: number;
 }

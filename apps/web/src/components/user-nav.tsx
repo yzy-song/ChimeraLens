@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from 'next/link';
 
 import { SecurityModal } from './security-modal';
+import { useModalStore } from "@/store/modal.store";
 
 export function UserNav() {
   const { data: userResponse } = useUser();
@@ -22,6 +23,8 @@ export function UserNav() {
 
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [isSecurityModalOpen, setSecurityModalOpen] = useState(false);
+
+  const { isAuthModalOpen, openAuthModal, closeAuthModal } = useModalStore();
 
   // 如果用户已登录
   if (token && user && !user.isGuest) {
@@ -66,10 +69,9 @@ export function UserNav() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button onClick={() => setIsBillingModalOpen(true)} variant="outline">Buy Credits</Button>
-        <Button onClick={() => setIsModalOpen(true)}>Login</Button>
+        <Button onClick={openAuthModal} variant="outline">Login</Button>
       </div>
-      <AuthModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <AuthModal open={isAuthModalOpen} onOpenChange={closeAuthModal} />
       <BillingModal open={isBillingModalOpen} onOpenChange={setIsBillingModalOpen} /> 
   
     </>
