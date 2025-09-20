@@ -34,8 +34,8 @@ export default function GalleryPage() {
   );
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900">
-      <header className="p-4 border-b bg-white dark:bg-gray-950 sticky top-0 z-10">
+    <div className="w-full min-h-screen bg-background">
+      <header className="p-4 border-b bg-background sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link href="/" className="text-xl font-bold">
             ChimeraLens AI

@@ -4,7 +4,7 @@ import { Template } from '@/hooks/use-templates';
 import Image from 'next/image';
 import { Crown } from 'lucide-react';
 import { Card } from './ui/card';
-import { Skeleton } from './ui/skeleton'; // 导入骨架屏组件
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TemplateGalleryProps {
   templates: Template[];
@@ -17,14 +17,15 @@ interface TemplateGalleryProps {
 export function TemplateGallery({
   templates, isLoading, isError, onSelectTemplate, selectedTemplateId
 }: TemplateGalleryProps) {
-  // 当加载时，显示骨架屏
+
+  // Skeleton Loader Logic
   if (isLoading) {
     return (
       <div className="w-full">
-        <div className="flex space-x-4 pb-4 overflow-x-auto">
+        <div className="flex space-x-4 pb-4 overflow-x-auto p-2"> {/* Add padding for skeleton too */}
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="flex-shrink-0">
-              <Skeleton className="w-32 h-32 md:w-40 md:h-40 rounded-lg" />
+            <div key={index} className="flex-shrink-0 w-32 h-32 md:w-40 md:h-40">
+              <Skeleton className="w-full h-full rounded-lg" />
             </div>
           ))}
         </div>
@@ -36,12 +37,14 @@ export function TemplateGallery({
 
   return (
     <div className="w-full">
-      <div className="flex space-x-4 pb-4 overflow-x-auto">
+      {/* 1. Add horizontal padding (px-2) to the scrolling container */}
+      <div className="flex space-x-4 pb-4 overflow-x-auto px-2">
         {templates.map((template) => (
+          // 2. Add a margin (m-2) to the clickable container
           <div
             key={template.id}
             onClick={() => onSelectTemplate(template)}
-            className="flex-shrink-0"
+            className="flex-shrink-0 m-2" 
           >
             <Card className={`
               w-32 h-32 md:w-40 md:h-40 rounded-lg overflow-hidden cursor-pointer 
@@ -70,3 +73,4 @@ export function TemplateGallery({
     </div>
   );
 }
+

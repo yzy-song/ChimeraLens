@@ -29,7 +29,6 @@ const getGenerations = async ({
   const { data } = await api.get("/generations", {
     params: { page, limit },
   });
-  console.log("Fetched generations:", data);
   return data;
 };
 
