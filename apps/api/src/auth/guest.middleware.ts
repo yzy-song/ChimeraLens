@@ -15,31 +15,15 @@ export class GuestMiddleware implements NestMiddleware {
 
   async use(req: RequestWithUser, res: Response, next: NextFunction) {
     const guestId = req.headers['x-guest-id'] as string;
+    if (!guestId) return next();
 
-    if (!guestId) {
-      return next();
-    }
-
-    let user = await this.prisma.user.findUnique({
-      where: { guestId },
-    });
-
+    let user = await this.prisma.user.findUnique({ where: { guestId } });
     if (!user) {
       user = await this.prisma.user.create({
-        data: {
-          guestId: guestId,
-          isGuest: true,
-          credits: 10, // Initial credits
-        },
+        data: { guestId, isGuest: true, credits: 10 },
       });
     }
-
-    // Attach user info without password, but with the hasPassword flag
-    req.user = {
-      ...user,
-      hasPassword: !!user.password,
-    };
-
+    req.user = { ...user, hasPassword: !!user.password };
     next();
   }
 }

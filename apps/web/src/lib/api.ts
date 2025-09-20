@@ -59,9 +59,6 @@ api.interceptors.response.use(
     const errorMessage =
       error.response?.data?.message ||
       "An unexpected error occurred. Please try again.";
-    toast.error(
-      error.response?.data?.message || "An unexpected error occurred."
-    );
 
     return Promise.reject(new Error(errorMessage));
   }
