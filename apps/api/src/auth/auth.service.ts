@@ -1,4 +1,12 @@
-﻿import { ConflictException, Injectable, UnauthorizedException, Inject, Scope } from '@nestjs/common';
+﻿import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+  Inject,
+  Scope,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user-dto';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +19,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { FirebaseAdminService } from 'src/common/firebase/firebase-admin.service';
 import { addMinutes } from 'date-fns';
 import { User as UserModel } from '@chimeralens/db';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { EmailService } from 'src/email/email.service';
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService {
   private readonly logger = new Logger(AuthService.name); // 新增
@@ -19,6 +29,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private firebaseAdmin: FirebaseAdminService,
+    private emailService: EmailService,
     @Inject(REQUEST) private readonly request: Request,
   ) {}
 
@@ -82,16 +93,36 @@ export class AuthService {
       throw new UnauthorizedException('Email or password is incorrect');
     }
 
+    // If the user has no password set (e.g., signed up with Google), they can't log in with a password.
+    if (!user.password) {
+      this.logger.warn(`Login failed: Password not set for email=${email}. Suggesting social login.`);
+      throw new UnauthorizedException(
+        'This account was created via Google. Please sign in with Google or set a password in your account settings.',
+      );
+    }
+    if (!(await bcrypt.compare(password, user.password))) {
+      this.logger.warn(`Login failed: Incorrect password for email=${email}`);
+      throw new UnauthorizedException('Email or password is incorrect');
+    }
+
     this.logger.log(`登录成功: userId=${user.id}, email=${email}`);
     return this._createToken(user);
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    this.logger.log(`忘记密码请求: email=${email}`);
+    this.logger.log(`Forgot password request for email: ${email}`);
     const user = await this.prisma.user.findUnique({ where: { email } });
+
     if (!user) {
-      this.logger.warn(`忘记密码，用户不存在: email=${email}`);
-      return { message: 'You will receive a reset email if the email address is valid.' };
+      this.logger.warn(`Forgot password: User not found for email=${email}. Sending generic response.`);
+      // Return a generic message to prevent email enumeration attacks.
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    }
+
+    // Do not allow password reset for users who signed up via social and haven't set a password.
+    if (!user.password) {
+      this.logger.warn(`Forgot password: Attempt to reset password for social-only account with email=${email}.`);
+      return { message: 'If an account with that email exists, a password reset link has been sent.' };
     }
 
     const resetToken = randomBytes(32).toString('hex');
@@ -103,25 +134,27 @@ export class AuthService {
       data: { passwordResetToken, passwordResetExpires },
     });
 
-    return { message: 'You will receive a reset email if the email address is valid.' };
+    // Send the email with the unhashed token
+    await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+
+    this.logger.log(`Password reset email initiated for ${email}`);
+    return { message: 'If an account with that email exists, a password reset link has been sent.' };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
     const { token, password } = resetPasswordDto;
-    this.logger.log(`重置密码请求`);
+    this.logger.log(`Reset password attempt with token.`);
 
     const hashedToken = createHash('sha256').update(token).digest('hex');
     const user = await this.prisma.user.findFirst({
       where: {
         passwordResetToken: hashedToken,
-        passwordResetExpires: {
-          gte: new Date(),
-        },
+        passwordResetExpires: { gte: new Date() },
       },
     });
 
     if (!user) {
-      this.logger.warn('重置密码失败，token无效或已过期');
+      this.logger.warn('Reset password failed: token is invalid or has expired.');
       throw new UnauthorizedException('Password reset token is invalid or has expired');
     }
 
@@ -137,8 +170,42 @@ export class AuthService {
       },
     });
 
-    this.logger.log(`密码重置成功: userId=${user.id}`);
+    this.logger.log(`Password reset successful for userId: ${user.id}`);
     return { message: 'Password reset successfully' };
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    this.logger.log(`Change password attempt for userId: ${userId}`);
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // If the user has an existing password, verify the current one.
+    if (user.password) {
+      if (!currentPassword) {
+        throw new BadRequestException('Current password is required.');
+      }
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        this.logger.warn(`Change password failed for userId ${userId}: Incorrect current password.`);
+        throw new UnauthorizedException('Incorrect current password.');
+      }
+    }
+    // If user.password is null (first time setting), we skip the check.
+
+    const saltRounds = 10;
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    this.logger.log(`Password successfully updated for userId: ${userId}`);
+    return { message: 'Password updated successfully.' };
   }
 
   async firebaseLogin(idToken: string) {

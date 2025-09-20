@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Post, UseGuards, Get, Req, Patch } from '@nestjs/common';
+﻿import { Body, Controller, Post, UseGuards, Get, Req, Patch, NotFoundException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user-dto';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -17,6 +17,7 @@ import { JwtOptionalGuard } from './guards/jwt-optional.guard';
 
 import { UsersService } from 'src/users/users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 @ApiTags('认证与用户管理')
 @Controller('auth') // 定义这个 Controller 的路由前缀是 /auth
 export class AuthController {
@@ -32,11 +33,7 @@ export class AuthController {
   @ApiCommonResponses()
   @UseGuards(JwtOptionalGuard) // <-- 使用我们新的“可选守卫”
   getMe(@User() user: UserModel | null) {
-    // 这里的 user 对象可能是：
-    // 1. 完整的注册用户信息 (如果 JWT 验证成功)
-    // 2. 游客用户信息 (如果 JWT 验证失败，但 GuestMiddleware 找到了游客)
-    // 3. null (如果既没有 JWT，也没有 guest-id)
-    return { user };
+    return this.usersService.getMe(user);
   }
 
   @Post('register')
@@ -102,5 +99,18 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   updateProfile(@User('id') userId: string, @Body() updateProfileDto: UpdateProfileDto) {
     return this.usersService.updateProfile(userId, updateProfileDto);
+  }
+
+  @Patch('password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set or change user password' })
+  @ApiResponse({ status: 200, description: 'Password updated successfully' })
+  @ApiCommonResponses()
+  @UseGuards(AuthGuard('jwt'))
+  changePassword(@User('id') userId: string, @Body() changePasswordDto: ChangePasswordDto) {
+    if (!userId) {
+      throw new NotFoundException('User not found');
+    }
+    return this.authService.changePassword(userId, changePasswordDto);
   }
 }

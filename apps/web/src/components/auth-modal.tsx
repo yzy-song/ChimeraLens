@@ -18,6 +18,7 @@ import { auth } from "@/lib/firebase";
 import { useFirebaseLogin } from "@/hooks/use-firebase-login";
 import { GoogleIcon } from "./icons/google-icon";
 import { PasswordInput } from "./ui/password-input";
+import { useModalStore } from "@/store/modal.store";
 
 interface AuthModalProps {
   open: boolean;
@@ -28,6 +29,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const { mutate: login, isPending: isLoginPending } = useLogin();
   const { mutate: register, isPending: isRegisterPending } = useRegister();
   const { mutate: firebaseLogin, isPending: isFirebasePending } = useFirebaseLogin();
+
+  const { isAuthModalOpen, closeAuthModal } = useModalStore();
 
   const isPending = isLoginPending || isRegisterPending || isFirebasePending;
 
@@ -61,7 +64,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isAuthModalOpen} onOpenChange={closeAuthModal}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Welcome to ChimeraLens</DialogTitle>

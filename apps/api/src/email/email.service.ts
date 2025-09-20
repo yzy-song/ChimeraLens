@@ -12,7 +12,7 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${token}`;
+    const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password/${token}`;
     const subject = 'Password Reset Request';
     const html = `<p>Hello,</p>
       <p>Please click the link below to reset your password:</p>

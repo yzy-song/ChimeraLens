@@ -12,6 +12,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from 'next/link';
 
+import { SecurityModal } from './security-modal';
+
 export function UserNav() {
   const { data: userResponse } = useUser();
   const user = userResponse?.data.user;
@@ -19,6 +21,7 @@ export function UserNav() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [isSecurityModalOpen, setSecurityModalOpen] = useState(false);
 
   // 如果用户已登录
   if (token && user && !user.isGuest) {
@@ -43,6 +46,9 @@ export function UserNav() {
             <DropdownMenuItem asChild>
               <Link href="/gallery">My Creations</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSecurityModalOpen(true)}>
+              Security
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setIsBillingModalOpen(true)}>
               Buy Credits
@@ -51,6 +57,7 @@ export function UserNav() {
           </DropdownMenuContent>
         </DropdownMenu>
         <BillingModal open={isBillingModalOpen} onOpenChange={setIsBillingModalOpen} />
+        <SecurityModal open={isSecurityModalOpen} onOpenChange={setSecurityModalOpen} />
       </>
     )
   }
@@ -59,7 +66,7 @@ export function UserNav() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Button onClick={() => setIsBillingModalOpen(true)} variant="outline">Buy Credits</Button> {/* <-- 3. 添加购买按钮 */}
+        <Button onClick={() => setIsBillingModalOpen(true)} variant="outline">Buy Credits</Button>
         <Button onClick={() => setIsModalOpen(true)}>Login</Button>
       </div>
       <AuthModal open={isModalOpen} onOpenChange={setIsModalOpen} />

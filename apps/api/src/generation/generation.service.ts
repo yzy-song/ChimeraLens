@@ -66,7 +66,8 @@ export class GenerationService {
   }
 
   async createGeneration(
-    user: User,
+    user: Omit<User, 'password'> & { hasPassword: boolean },
+
     sourceImage: Express.Multer.File,
     templateId: string,
     modelKey: string,

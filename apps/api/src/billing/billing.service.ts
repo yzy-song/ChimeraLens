@@ -30,8 +30,6 @@ export class BillingService {
       throw new Error('Invalid price ID');
     }
 
-    this.logger.log(`Creating checkout session for user ${user.id}, priceId: ${priceId}`);
-
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],

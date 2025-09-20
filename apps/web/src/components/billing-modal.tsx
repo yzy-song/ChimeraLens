@@ -7,6 +7,9 @@ import { Button } from './ui/button';
 import { useCreateCheckout } from '@/hooks/use-create-checkout';
 import { toast } from 'sonner';
 
+import { useUser } from "@/hooks/use-user";
+import { useModalStore } from "@/store/modal.store";
+
 interface BillingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,8 +43,17 @@ const pricingPlans = [
 
 export function BillingModal({ open, onOpenChange }: BillingModalProps) {
   const { mutate: createCheckout, isPending } = useCreateCheckout();
+ const { data: userResponse } = useUser();
+  const user = userResponse?.data.user;
+  const { openAuthModal } = useModalStore();
 
   const handleBuyClick = (priceId: string) => {
+     if (!user || user.isGuest) {
+      toast.error("Please log in or register to purchase credits.");
+      onOpenChange(false); 
+      openAuthModal();
+      return;
+    }
     toast.info('Redirecting to checkout...');
     createCheckout(priceId);
   };

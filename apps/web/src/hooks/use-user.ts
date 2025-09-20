@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { ApiResponse } from "@/types";
 
 interface UserData {
-  user: User | null;
+  user: (User & { hasPassword?: boolean }) | null;
 }
 
 const getMe = async (): Promise<ApiResponse<UserData>> => {

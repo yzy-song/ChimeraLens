@@ -1,4 +1,4 @@
-﻿import { Injectable, UnauthorizedException } from '@nestjs/common';
+﻿import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -37,10 +37,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('无效的令牌');
     }
 
-    // 从返回的用户信息中删除密码
+    // 1. Determine if the user has a password.
+    const hasPassword = !!user.password;
+    // 2. Remove the password from the object for security.
     const { password, ...userWithoutPassword } = user;
 
-    // 此处返回的用户对象，会被 Passport 附加到 Request 对象上 (req.user)
-    return userWithoutPassword;
+    // 3. Return the user object WITH the correct `hasPassword` field.
+    // This object is what gets attached to the request as `req.user`.
+    return { ...userWithoutPassword, hasPassword };
   }
 }

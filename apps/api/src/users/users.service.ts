@@ -2,6 +2,9 @@
 import { PrismaService } from 'src/prisma/prisma.service';
 
 import { UpdateProfileDto } from '../auth/dto/update-profile.dto';
+
+import { User as UserModel } from '@chimeralens/db';
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -39,5 +42,17 @@ export class UsersService {
 
     // 此处返回的用户对象，会被 Passport 附加到 Request 对象上 (req.user)
     return userWithoutPassword;
+  }
+
+  async getMe(user: UserModel | null) {
+    if (!user) return { user: null };
+    // 这里查数据库，确保能拿到 password 字段
+    const dbUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+    return {
+      user: {
+        ...user,
+        hasPassword: !!dbUser?.password,
+      },
+    };
   }
 }

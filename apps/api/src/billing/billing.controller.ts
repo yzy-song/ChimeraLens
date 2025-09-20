@@ -4,7 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { User as UserModel } from '@chimeralens/db';
 
 import { User } from 'src/auth/decorators/user.decorator';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
 
 @ApiTags('Billing')
@@ -15,6 +15,7 @@ export class BillingController {
 
   @Post('create-checkout-session')
   @ApiOperation({ summary: 'Create Stripe Checkout Session' })
+  @ApiResponse({ status: 200, description: 'Checkout session created successfully.' })
   @ApiCommonResponses()
   createCheckoutSession(@User() user: UserModel, @Body('priceId') priceId: string) {
     return this.billingService.createCheckoutSession(user, priceId);

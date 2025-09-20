@@ -13,6 +13,7 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GenerationService } from './generation.service';
@@ -30,7 +31,7 @@ import { User as UserModel } from '@chimeralens/db';
 import { paginate } from 'src/common/utils/pagination.util';
 
 @ApiTags('图像生成')
-@UseGuards(ThrottlerGuard) // 应用速率限制守卫
+@UseGuards(ThrottlerGuard)
 @Controller('generations')
 export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
@@ -51,9 +52,8 @@ export class GenerationController {
   @ApiOperation({ summary: '获取当前用户的生成历史' })
   @ApiBearerAuth()
   @UseGuards(JwtOptionalGuard)
-  findAll(@User() user: UserModel, @Query() paginationDto: PaginationDto) {
+  async findAll(@User() user: RequestWithUser['user'], @Query() paginationDto: PaginationDto) {
     if (!user) {
-      // 如果既没有 guest-id 也没有 token，则返回空列表
       return paginate([], 0, paginationDto.page, paginationDto.limit);
     }
     return this.generationService.findAll(user.id, paginationDto);
@@ -64,14 +64,14 @@ export class GenerationController {
   @ApiOperation({ summary: '创建新的图像生成请求' })
   @ApiResponse({ status: 201, description: '图像生成请求已创建' })
   @ApiCommonResponses()
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 覆盖默认值：60秒内最多请求 5 次
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseInterceptors(FileInterceptor('sourceImage'))
   async create(
     @Req() req: RequestWithUser,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 10 }), // 10MB
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 10 }),
           new FileTypeValidator({ fileType: 'image' }),
         ],
       }),
@@ -79,11 +79,15 @@ export class GenerationController {
     sourceImage: Express.Multer.File,
     @Body() createGenerationDto: CreateGenerationDto,
   ) {
-    if (!req.user) {
-      throw new Error('User not found...');
+    const user = req.user;
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+    if (!createGenerationDto.templateId || !createGenerationDto.modelKey) {
+      throw new BadRequestException('Missing required fields: templateId or modelKey.');
     }
     return this.generationService.createGeneration(
-      req.user,
+      user,
       sourceImage,
       createGenerationDto.templateId,
       createGenerationDto.modelKey,
