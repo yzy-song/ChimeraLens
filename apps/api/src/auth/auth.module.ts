@@ -7,13 +7,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersService } from 'src/users/users.service';
+import { EmailModule } from 'src/email/email.module';
+import { EmailService } from 'src/email/email.service';
 
 @Module({
   imports: [
     ConfigModule, // 确保 ConfigModule 被导入
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule, EmailModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
@@ -30,6 +32,6 @@ import { UsersService } from 'src/users/users.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, JwtStrategy],
+  providers: [AuthService, UsersService, EmailService, JwtStrategy],
 })
 export class AuthModule {}

@@ -32,7 +32,7 @@ export class AppLogger implements LoggerService {
 
     this.logger = createLogger({
       level: process.env.LOG_LEVEL || 'info',
-      defaultMeta: { service: 'nail-salon' },
+      defaultMeta: { service: 'Chimeralens' },
       transports: [
         new transports.Console({
           format: consoleFormat,
