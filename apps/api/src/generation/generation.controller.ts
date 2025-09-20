@@ -14,6 +14,8 @@ import {
   FileTypeValidator,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GenerationService } from './generation.service';
@@ -29,6 +31,7 @@ import { JwtOptionalGuard } from 'src/auth/guards/jwt-optional.guard';
 import { User } from 'src/auth/decorators/user.decorator';
 import { User as UserModel } from '@chimeralens/db';
 import { paginate } from 'src/common/utils/pagination.util';
+import { Response } from 'express';
 
 @ApiTags('图像生成')
 @UseGuards(ThrottlerGuard)
@@ -93,5 +96,28 @@ export class GenerationController {
       createGenerationDto.modelKey,
       createGenerationDto.options,
     );
+  }
+
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download a generated image' })
+  @ApiResponse({ status: 200, description: 'Returns the image file for download.' })
+  @ApiBearerAuth()
+  @UseGuards(JwtOptionalGuard)
+  async download(@Param('id') id: string, @User() user: UserModel, @Res() res: Response) {
+    if (!user) {
+      throw new ForbiddenException('You must be logged in or provide a guest ID to download images.');
+    }
+
+    // First, verify ownership to ensure users can only download their own creations
+    const generation = await this.generationService.findOneById(id);
+    if (!generation || generation.userId !== user.id) {
+      throw new ForbiddenException('You are not authorized to download this image.');
+    }
+
+    const { buffer, filename } = await this.generationService.getGenerationForDownload(id);
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.send(buffer);
   }
 }

@@ -199,6 +199,34 @@ export class GenerationService {
     return paginate(items, total, page, limit);
   }
 
+  async getGenerationForDownload(id: string): Promise<{ buffer: Buffer; filename: string }> {
+    this.logger.log(`Preparing generation for download: ${id}`);
+    const generation = await this.prisma.generation.findUnique({
+      where: { id },
+    });
+
+    if (!generation) {
+      throw new NotFoundException(`Generation with ID ${id} not found.`);
+    }
+
+    // Remove Cloudinary's web optimization parameters to fetch the original, high-quality image.
+    // We also explicitly request the PNG format for consistency.
+    const originalUrl = generation.resultImageUrl.replace('/upload/f_auto,q_auto/', '/upload/f_png/');
+
+    this.logger.log(`Fetching original image from Cloudinary: ${originalUrl}`);
+
+    const imageResponse = await fetch(originalUrl);
+    if (!imageResponse.ok) {
+      this.logger.error(`Failed to fetch image from Cloudinary. Status: ${imageResponse.status}`);
+      throw new Error('Could not download the image from the storage provider.');
+    }
+
+    const buffer = Buffer.from(await imageResponse.arrayBuffer());
+    const filename = `chimeralens-result-${id.substring(0, 6)}.png`;
+
+    return { buffer, filename };
+  }
+
   async findOneById(id: string) {
     this.logger.log(`Fetching generation by ID: ${id}`);
     return this.prisma.generation.findUnique({

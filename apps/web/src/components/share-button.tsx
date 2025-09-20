@@ -23,8 +23,8 @@ export function ShareButton({ artworkUrl, title }: ShareButtonProps) {
 
   const handleShare = async () => {
     const shareData = {
-      title: title || '来看看我在 ChimeraLens 上的AI创作！',
-      text: '快来试试这款超酷的AI换脸应用吧！',
+      title: title || 'Check out my AI creation on ChimeraLens!',
+      text: 'Try this amazing AI face swap app!',
       url: artworkUrl,
     };
 
@@ -32,46 +32,46 @@ export function ShareButton({ artworkUrl, title }: ShareButtonProps) {
       try {
         await navigator.share(shareData);
       } catch (error) {
-        console.error('分享失败:', error);
+        console.error('Share failed:', error);
       }
     } else {
-      // 如果浏览器不支持，则显示后备UI
+      // If browser does not support native share, show fallback UI
       setFallbackOpen(true);
     }
   };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(artworkUrl);
-    toast.success('链接已复制到剪贴板！');
+    toast.success('Link copied to clipboard!');
   };
 
   return (
     <>
       <Button onClick={handleShare}>
         <Share2 className="mr-2 h-5 w-5" />
-        分享
+        Share
       </Button>
 
       <Dialog open={isFallbackOpen} onOpenChange={setFallbackOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>分享你的创作</DialogTitle>
+            <DialogTitle>Share Your Creation</DialogTitle>
             <DialogDescription>
-              你的浏览器不支持原生分享，你可以复制下面的链接。
+              Your browser does not support native sharing. You can copy the link below.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center space-x-2">
             <Input defaultValue={artworkUrl} readOnly />
-            <Button onClick={copyToClipboard}>复制</Button>
+            <Button onClick={copyToClipboard}>Copy</Button>
           </div>
           <div className="mt-4 flex justify-center gap-4">
-             <a 
-              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(artworkUrl)}&text=${encodeURIComponent(title)}`} 
-              target="_blank" 
+            <a
+              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(artworkUrl)}&text=${encodeURIComponent(title)}`}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium hover:underline"
             >
-              分享到 Twitter
+              Share on Twitter
             </a>
           </div>
         </DialogContent>
