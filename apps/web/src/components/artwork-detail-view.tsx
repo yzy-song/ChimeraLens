@@ -24,7 +24,7 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
 
   const handleDownload = () => {
     if (generation.id) {
-      download(generation.id, `${title}.png`);
+      download(generation.id);
     }
   };
 
