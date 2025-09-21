@@ -16,8 +16,10 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'; // <-- 1. å
 import { APP_GUARD } from '@nestjs/core';
 import { BillingModule } from './billing/billing.module';
 import { EmailModule } from './email/email.module';
+import { CacheModule } from './cache/cache.module';
 @Module({
   imports: [
+    CacheModule,
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
       {

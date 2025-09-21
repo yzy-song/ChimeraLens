@@ -99,25 +99,34 @@ export default function Home() {
   const generationResult = generationResponse?.data;
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+    <div className="w-full min-h-screenbg-background flex flex-col">
       <header className="sticky top-0 z-50 p-4 border-b bg-background/80 backdrop-blur-sm flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Image
-            src="https://placehold.co/40x40?text=Logo"
+            src="/logo.png"
             alt="Logo"
             width={40}
             height={40}
             className="rounded"
           />
-          <span className="text-lg font-semibold text-primary">One-click to another you</span>
+          <span
+            className="text-lg font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+          >
+            One-click to another you
+          </span>
         </div>
-        <div className='flex items-center gap-4'>
+        <div className="flex items-center gap-4">
           {isClient && (
-            <div className="flex items-center px-3 py-2 border rounded-full text-sm font-semibold bg-gray-200 dark:bg-gray-700">
-              ✨ {user?.credits ?? '...'}
+            <div className="flex sm:hidden items-center px-2 py-1 border rounded-full text-xs font-semibold bg-secondary">
+              <span className="mr-1">✨</span> {user?.credits ?? <Skeleton className="w-4 h-4 inline-block" />}
             </div>
           )}
-          {isClient && <UserNav/>}
+          {isClient && (
+            <div className="hidden sm:flex items-center px-3 py-1.5 border rounded-full text-sm font-semibold bg-secondary">
+              <span className="mr-2">✨</span> {user?.credits ?? <Skeleton className="w-4 h-4 inline-block" />}
+            </div>
+          )}
+          {isClient && <UserNav />}
         </div>
       </header>
 

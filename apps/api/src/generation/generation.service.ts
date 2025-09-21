@@ -174,7 +174,7 @@ export class GenerationService {
         where: whereClause,
       }),
     ]);
-
+    this.logger.log('cache missed - fetched from DB');
     return paginate(items, total, page, limit);
   }
 

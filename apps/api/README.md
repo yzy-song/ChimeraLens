@@ -11,3 +11,16 @@
 
 4. Face and image merge（人脸与图像合并）
    如果你主要是想把自己的面部照片和另一张照片进行融合，比如把你的脸融合到一张卡通形象照片上，那么 “Face and image merge” 这个关键词会比较合适。它突出了人脸与另一张普通图像的合并操作，搜索这个关键词可能会找到专注于人脸与其他图像融合的模型，这些模型可能会对人脸进行特殊处理以保证融合的自然度。
+
+你想创建一个名为 auth的模块，并且希望它包含控制器和服务，且不生成测试文件：
+nest g resource 模块名
+nest g mo Cache --controller --service --no-spec
+或
+nest generate module Cache --controller --service --no-spec
+执行后，你将得到：
+
+auth.module.ts（已自动导入并注册 Controller 和 Service）
+
+auth.controller.ts
+
+auth.service.ts

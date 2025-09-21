@@ -36,7 +36,7 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
   const title = `My AI Creation #${generation.id.substring(0, 6)}`;
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+    <div className="w-full min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-50 p-4 border-b bg-background/80 backdrop-blur-sm flex justify-between items-center">
         <Button asChild variant="ghost">
           <Link href="/gallery" className="flex items-center">

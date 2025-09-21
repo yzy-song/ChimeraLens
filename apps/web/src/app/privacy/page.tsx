@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <header className="p-4 border-b bg-white dark:bg-gray-950 sticky top-0 z-10">
+    <div className="bg-background min-h-screen">
+      <header className="p-4 border-b bg-background sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           {/* 返回主页按钮 */}
           <Link href="/" className="flex items-center text-gray-600 hover:text-blue-500">

@@ -26,10 +26,9 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { CreateGenerationDto } from './dto/create-generation.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiCommonResponses } from 'src/common/decorators/api-common-responses.decorator';
-
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { JwtOptionalGuard } from 'src/auth/guards/jwt-optional.guard';
 import { User } from 'src/auth/decorators/user.decorator';
-import { User as UserModel } from '@chimeralens/db';
 import { paginate } from 'src/common/utils/pagination.util';
 import { Response } from 'express';
 
@@ -52,6 +51,8 @@ export class GenerationController {
   }
 
   @Get()
+  @UseInterceptors(CacheInterceptor) // <-- 1. 使用缓存拦截器
+  @CacheTTL(3600 * 1000) // <-- 2. 设置缓存过期时间为 1 小时 (3600 秒)
   @ApiOperation({ summary: '获取当前用户的生成历史' })
   @ApiBearerAuth()
   @UseGuards(JwtOptionalGuard)
