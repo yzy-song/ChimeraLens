@@ -14,7 +14,7 @@ import {
   FileTypeValidator,
   UseGuards,
   BadRequestException,
-  ForbiddenException,
+  StreamableFile,
   Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -99,25 +99,16 @@ export class GenerationController {
   }
 
   @Get(':id/download')
-  @ApiOperation({ summary: 'Download a generated image' })
-  @ApiResponse({ status: 200, description: 'Returns the image file for download.' })
+  @ApiOperation({ summary: '下载带有水印的图片' })
+  @ApiResponse({ status: 200, description: '返回水印图片' })
+  @ApiCommonResponses()
   @ApiBearerAuth()
   @UseGuards(JwtOptionalGuard)
-  async download(@Param('id') id: string, @User() user: UserModel, @Res() res: Response) {
-    if (!user) {
-      throw new ForbiddenException('You must be logged in or provide a guest ID to download images.');
-    }
-
-    // First, verify ownership to ensure users can only download their own creations
-    const generation = await this.generationService.findOneById(id);
-    if (!generation || generation.userId !== user.id) {
-      throw new ForbiddenException('You are not authorized to download this image.');
-    }
-
-    const { buffer, filename } = await this.generationService.getGenerationForDownload(id);
+  async download(@Param('id') id: string, @Res() res: Response): Promise<void> {
+    const fileBuffer = await this.generationService.downloadGeneration(id);
 
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-    res.send(buffer);
+    res.setHeader('Content-Disposition', `attachment; filename="chimeralens-${id}.png"`);
+    res.send(fileBuffer);
   }
 }

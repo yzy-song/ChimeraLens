@@ -4,54 +4,52 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-// Define the type for variables passed to the mutation
-interface DownloadVariables {
-  id: string;
-  filename: string;
-}
-
-// The API returns the image data as a Blob
-const downloadGeneration = async ({
-  id,
-  filename,
-}: DownloadVariables): Promise<{ blob: Blob; filename: string }> => {
+// 这个函数会从 API 获取 Blob 数据和文件名
+const downloadApi = async (
+  id: string
+): Promise<{ blob: Blob; filename: string }> => {
   const response = await api.get(`/generations/${id}/download`, {
-    responseType: "blob", // Important: expect a binary response
+    responseType: "blob", // 明确我们期望的是二进制数据
   });
 
-  // We return the blob and the original filename we passed in
+  // 从服务器的响应头中提取文件名
+  const contentDisposition = response.headers["content-disposition"];
+  let filename = `chimeralens-result-${id.substring(0, 6)}.png`; // 设置一个默认文件名
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+    if (filenameMatch && filenameMatch.length > 1) {
+      filename = filenameMatch[1];
+    }
+  }
+
   return { blob: response.data as Blob, filename };
 };
 
 export function useDownloadGeneration() {
-  // 1. Get the raw mutation result from TanStack Query
-  const mutation = useMutation({
-    mutationFn: downloadGeneration,
-    onSuccess: ({ blob, filename }) => {
-      // Create a link and trigger the download
+  const { mutate, isPending } = useMutation({
+    mutationFn: downloadApi,
+    onSuccess: (data) => {
+      // 从 data 对象中解构出 blob 和 filename
+      const { blob, filename } = data;
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", filename); // Use the filename passed through the mutation
+      link.setAttribute("download", filename); // 使用从服务器获取的文件名
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
       toast.success("Download started!");
     },
     onError: (error) => {
-      toast.error(`Download failed: ${error.message}`);
+      toast.error(error.message || "Download failed. Please try again.");
     },
   });
 
-  // 2. Create a wrapper function for components to call
-  const download = (id: string, filename: string) => {
-    mutation.mutate({ id, filename });
+  const download = (id: string) => {
+    mutate(id);
   };
 
-  // 3. Return a custom object with the properties our components expect
-  return {
-    download,
-    isDownloading: mutation.isPending, // Rename isPending to isDownloading
-  };
+  return { download, isDownloading: isPending };
 }

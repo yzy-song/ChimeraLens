@@ -1,15 +1,16 @@
 import { MODELS } from './models.config';
-import { Injectable, ForbiddenException, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, ForbiddenException, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@chimeralens/db';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 import { ReplicateProvider } from './providers/replicate.provider';
-
 import { TEMPLATES_DATA } from '../templates/templates.data';
-import { NotFoundException } from '@nestjs/common';
 import { paginate } from 'src/common/utils/pagination.util';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import sharp from 'sharp';
+import axios from 'axios';
+import { join } from 'path';
 
 @Injectable()
 export class GenerationService {
@@ -27,17 +28,11 @@ export class GenerationService {
     });
   }
 
-  /**
-   * Optimizes a Cloudinary URL by adding f_auto and q_auto transformations.
-   * @param url The original Cloudinary URL.
-   * @returns The optimized URL for web delivery.
-   */
   private optimizeCloudinaryUrl(url: string): string {
     if (!url || !url.includes('/upload/')) {
       return url;
     }
     const parts = url.split('/upload/');
-    // Inserts f_auto (auto format) and q_auto (auto quality)
     const optimizedUrl = `${parts[0]}/upload/f_auto,q_auto/${parts[1]}`;
     this.logger.log(`Optimizing Cloudinary URL: ${url} -> ${optimizedUrl}`);
     return optimizedUrl;
@@ -101,14 +96,10 @@ export class GenerationService {
       throw new Error(`Model with key '${modelKey}' not found.`);
     }
 
-    // Upload source image and get its URL
-    const sourceUploadResult = await this.uploadImageFromBuffer(sourceImage.buffer);
-    const sourceImageUrl = this.optimizeCloudinaryUrl(sourceUploadResult.secure_url);
+    const sourceImageUpload = await this.uploadImageFromBuffer(sourceImage.buffer);
+    const sourceImageUrl = this.optimizeCloudinaryUrl(sourceImageUpload.secure_url);
 
-    const modelInput = modelConfig.formatInput(
-      { templateImageUrl: template.imageUrl, sourceImageUrl: sourceUploadResult.secure_url },
-      options,
-    );
+    const modelInput = modelConfig.formatInput({ templateImageUrl: template.imageUrl, sourceImageUrl }, options);
     const modelId = modelConfig.id;
 
     this.logger.log('--- Sending to Replicate ---');
@@ -122,27 +113,14 @@ export class GenerationService {
         input: modelInput,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error(`Replicate generation failed: ${error.message}`);
-        if (error.message.toLowerCase().includes('face')) {
-          throw new BadRequestException(
-            "We couldn't detect a face in the uploaded image. Please try a clearer, front-facing photo.",
-          );
-        }
-        if (error.message.toLowerCase().includes('nsfw')) {
-          throw new BadRequestException(
-            'The operation was blocked due to the safety policy. Please try a different image.',
-          );
-        }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Replicate generation failed: ${errorMessage}`);
+      if (errorMessage.toLowerCase().includes('face')) {
         throw new BadRequestException(
-          'The AI model failed to generate an image. This can sometimes happen with complex requests. Please try again.',
-        );
-      } else {
-        this.logger.error('Replicate generation failed with unknown error', error);
-        throw new BadRequestException(
-          'The AI model failed to generate an image. This can sometimes happen with complex requests. Please try again.',
+          'Generation failed: No face was detected in the source image. Please try another photo.',
         );
       }
+      throw new BadRequestException('AI generation failed. Please try again later.');
     }
 
     const temporaryResultUrl = Array.isArray(replicateOutput) ? replicateOutput[0] : replicateOutput;
@@ -152,8 +130,8 @@ export class GenerationService {
       throw new Error('AI generation failed to return a valid image URL.');
     }
 
-    const finalImageUpload = await this.uploadImageFromUrl(temporaryResultUrl);
-    const resultImageUrl = this.optimizeCloudinaryUrl(finalImageUpload.secure_url);
+    const finalImage = await this.uploadImageFromUrl(temporaryResultUrl);
+    const optimizedUrl = this.optimizeCloudinaryUrl(finalImage.secure_url);
 
     const [updatedUser, newGeneration] = await this.prisma.$transaction([
       this.prisma.user.update({
@@ -162,10 +140,11 @@ export class GenerationService {
       }),
       this.prisma.generation.create({
         data: {
+          id: finalImage.public_id.split('/')[2],
           userId: user.id,
-          sourceImageUrl, // Store optimized URL
+          sourceImageUrl: this.optimizeCloudinaryUrl(sourceImageUrl),
           templateImageUrl: template.imageUrl,
-          resultImageUrl, // Store optimized URL
+          resultImageUrl: optimizedUrl,
         },
       }),
     ]);
@@ -199,38 +178,32 @@ export class GenerationService {
     return paginate(items, total, page, limit);
   }
 
-  async getGenerationForDownload(id: string): Promise<{ buffer: Buffer; filename: string }> {
-    this.logger.log(`Preparing generation for download: ${id}`);
-    const generation = await this.prisma.generation.findUnique({
-      where: { id },
-    });
-
-    if (!generation) {
-      throw new NotFoundException(`Generation with ID ${id} not found.`);
-    }
-
-    // Remove Cloudinary's web optimization parameters to fetch the original, high-quality image.
-    // We also explicitly request the PNG format for consistency.
-    const originalUrl = generation.resultImageUrl.replace('/upload/f_auto,q_auto/', '/upload/f_png/');
-
-    this.logger.log(`Fetching original image from Cloudinary: ${originalUrl}`);
-
-    const imageResponse = await fetch(originalUrl);
-    if (!imageResponse.ok) {
-      this.logger.error(`Failed to fetch image from Cloudinary. Status: ${imageResponse.status}`);
-      throw new Error('Could not download the image from the storage provider.');
-    }
-
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
-    const filename = `chimeralens-result-${id.substring(0, 6)}.png`;
-
-    return { buffer, filename };
-  }
-
   async findOneById(id: string) {
     this.logger.log(`Fetching generation by ID: ${id}`);
     return this.prisma.generation.findUnique({
       where: { id },
     });
+  }
+
+  async downloadGeneration(id: string): Promise<Buffer> {
+    this.logger.log(`Processing download request for generation: ${id}`);
+    const generation = await this.prisma.generation.findUnique({ where: { id } });
+    if (!generation) {
+      throw new NotFoundException('Generation not found');
+    }
+
+    const originalUrl = generation.resultImageUrl.replace('/f_auto,q_auto/', '/');
+    const response = await axios.get(originalUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    const logoPath = join(process.cwd(), 'public', 'logo.png');
+
+    const watermarkedBuffer = await sharp(imageBuffer)
+      .composite([{ input: logoPath, gravity: 'southeast' }])
+      .png({ quality: 90, compressionLevel: 6 }) // 明确输出为PNG并进行压缩
+      .toBuffer();
+
+    this.logger.log(`Successfully watermarked image: ${id}`);
+    return watermarkedBuffer;
   }
 }
