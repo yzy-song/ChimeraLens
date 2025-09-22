@@ -90,8 +90,13 @@ export class GenerationController {
     if (!createGenerationDto.templateId || !createGenerationDto.modelKey) {
       throw new BadRequestException('Missing required fields: templateId or modelKey.');
     }
+    // Ensure hasPassword is present and boolean
+    const userWithHasPassword = {
+      ...user,
+      hasPassword: !!user.hasPassword,
+    };
     return this.generationService.createGeneration(
-      user,
+      userWithHasPassword,
       sourceImage,
       createGenerationDto.templateId,
       createGenerationDto.modelKey,

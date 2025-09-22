@@ -24,6 +24,9 @@ model User {
   guestId   String?  @unique
   credits   Int      @default(10)
 
+  createdIp   String?
+  fingerprint String? // 新增设备指纹字段
+
   passwordResetToken   String?   @unique
   passwordResetExpires DateTime?
 
@@ -31,6 +34,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   generations Generation[]
+  @@index([fingerprint]) // 为指纹添加索引以加快查询
 }
 
 model Generation {
