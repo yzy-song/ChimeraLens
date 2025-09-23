@@ -11,6 +11,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import sharp from 'sharp';
 import axios from 'axios';
 import { join } from 'path';
+import { CreateGenerationDto } from './dto/create-generation.dto';
 
 @Injectable()
 export class GenerationService {
@@ -38,20 +39,36 @@ export class GenerationService {
     return optimizedUrl;
   }
 
+  private async _cropImageToFace(
+    imageBuffer: Buffer,
+    box: { x: number; y: number; width: number; height: number },
+  ): Promise<Buffer> {
+    this.logger.log('Cropping image to selected face...');
+    try {
+      const croppedBuffer = await sharp(imageBuffer)
+        .extract({
+          left: Math.floor(box.x),
+          top: Math.floor(box.y),
+          width: Math.floor(box.width),
+          height: Math.floor(box.height),
+        })
+        .toBuffer();
+      this.logger.log('Image cropped successfully.');
+      return croppedBuffer;
+    } catch (error) {
+      this.logger.error('Failed to crop image', error);
+      throw new BadRequestException('Failed to process the selected face area.');
+    }
+  }
+
   private async uploadImageFromBuffer(fileBuffer: Buffer): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream(
-          {
-            resource_type: 'image',
-            folder: 'chimeralens/user_uploads',
-          },
-          (error, result) => {
-            if (error) return reject(new Error(error.message || String(error)));
-            if (!result) return reject(new Error('Cloudinary upload failed.'));
-            resolve(result);
-          },
-        )
+        .upload_stream({ resource_type: 'image', folder: 'chimeralens/user_uploads' }, (error, result) => {
+          if (error) return reject(new Error(error.message || String(error)));
+          if (!result) return reject(new Error('Cloudinary upload failed.'));
+          resolve(result);
+        })
         .end(fileBuffer);
     });
   }
@@ -59,9 +76,7 @@ export class GenerationService {
   private async uploadImageFromUrl(imageUrl: string): Promise<UploadApiResponse> {
     try {
       this.logger.log(`Transferring image from URL to Cloudinary: ${imageUrl}`);
-      const result = await cloudinary.uploader.upload(imageUrl, {
-        folder: 'chimeralens/results',
-      });
+      const result = await cloudinary.uploader.upload(imageUrl, { folder: 'chimeralens/results' });
       this.logger.log('Image transferred to Cloudinary successfully.');
       return result;
     } catch (error) {
@@ -71,67 +86,64 @@ export class GenerationService {
   }
 
   async createGeneration(
-    user: Omit<User, 'password'> & { hasPassword: boolean },
-
+    user: Omit<User, 'password'>,
     sourceImage: Express.Multer.File,
-    templateId: string,
-    modelKey: string,
-    options?: Record<string, any>,
+    generationDto: CreateGenerationDto,
   ) {
+    const { templateId, modelKey, options, faceSelection } = generationDto;
+
     const template = TEMPLATES_DATA.find((t) => t.id === templateId);
-    if (!template) {
-      throw new NotFoundException('Template not found');
-    }
+    if (!template) throw new NotFoundException('Template not found');
 
     if (template.isPremium && user.isGuest) {
       throw new ForbiddenException('This is a premium template. Please log in or register to use it.');
     }
-
-    if (user.credits <= 0) {
-      throw new ForbiddenException('Insufficient credits');
-    }
+    if (user.credits <= 0) throw new ForbiddenException('Insufficient credits');
 
     const modelConfig = MODELS[modelKey];
-    if (!modelConfig) {
-      throw new Error(`Model with key '${modelKey}' not found.`);
+    if (!modelConfig) throw new Error(`Model with key '${modelKey}' not found.`);
+
+    // --- 核心改动: 裁剪逻辑 ---
+    let imageBufferToProcess = sourceImage.buffer;
+    if (faceSelection) {
+      imageBufferToProcess = await this._cropImageToFace(sourceImage.buffer, faceSelection);
     }
 
-    const sourceImageUpload = await this.uploadImageFromBuffer(sourceImage.buffer);
+    // 上传（可能被裁剪过的）图片到 Cloudinary
+    const sourceImageUpload = await this.uploadImageFromBuffer(imageBufferToProcess);
     const sourceImageUrl = this.optimizeCloudinaryUrl(sourceImageUpload.secure_url);
 
     const modelInput = modelConfig.formatInput({ templateImageUrl: template.imageUrl, sourceImageUrl }, options);
     const modelId = modelConfig.id;
 
     this.logger.log('--- Sending to Replicate ---');
-    this.logger.log('Model ID:', modelId);
-    this.logger.log('Model Input:', modelInput);
+    this.logger.log(`Model ID: ${modelId}`);
 
     let replicateOutput;
     try {
-      replicateOutput = await this.replicateProvider.run({
-        model: modelId,
-        input: modelInput,
-      });
+      replicateOutput = await this.replicateProvider.run({ model: modelId, input: modelInput });
     } catch (error) {
+      this.logger.error('Replicate generation failed111:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Replicate generation failed: ${errorMessage}`);
+      this.logger.error(`Replicate generation failed222: ${errorMessage}`);
       if (errorMessage.toLowerCase().includes('face')) {
-        throw new BadRequestException(
-          'Generation failed: No face was detected in the source image. Please try another photo.',
-        );
+        throw new BadRequestException('Generation failed: No face was detected. Please try another photo.');
       }
       throw new BadRequestException('AI generation failed. Please try again later.');
     }
 
     const temporaryResultUrl = Array.isArray(replicateOutput) ? replicateOutput[0] : replicateOutput;
-
     if (!temporaryResultUrl || typeof temporaryResultUrl !== 'string') {
-      this.logger.error('Could not parse a valid URL from Replicate output', replicateOutput);
       throw new Error('AI generation failed to return a valid image URL.');
     }
 
     const finalImage = await this.uploadImageFromUrl(temporaryResultUrl);
     const optimizedUrl = this.optimizeCloudinaryUrl(finalImage.secure_url);
+
+    // --- 保存原始、完整的图片URL ---
+    const originalSourceImageUrl = faceSelection
+      ? (await this.uploadImageFromBuffer(sourceImage.buffer)).secure_url
+      : sourceImageUrl;
 
     const [updatedUser, newGeneration] = await this.prisma.$transaction([
       this.prisma.user.update({
@@ -140,9 +152,9 @@ export class GenerationService {
       }),
       this.prisma.generation.create({
         data: {
-          id: finalImage.public_id.split('/')[2],
+          id: finalImage.public_id.split('/').pop(), // 获取更可靠的ID
           userId: user.id,
-          sourceImageUrl: this.optimizeCloudinaryUrl(sourceImageUrl),
+          sourceImageUrl: this.optimizeCloudinaryUrl(originalSourceImageUrl),
           templateImageUrl: template.imageUrl,
           resultImageUrl: optimizedUrl,
         },
@@ -166,13 +178,9 @@ export class GenerationService {
         where: whereClause,
         skip: skip,
         take: limit,
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.generation.count({
-        where: whereClause,
-      }),
+      this.prisma.generation.count({ where: whereClause }),
     ]);
     this.logger.log('cache missed - fetched from DB');
     return paginate(items, total, page, limit);
@@ -180,17 +188,13 @@ export class GenerationService {
 
   async findOneById(id: string) {
     this.logger.log(`Fetching generation by ID: ${id}`);
-    return this.prisma.generation.findUnique({
-      where: { id },
-    });
+    return this.prisma.generation.findUnique({ where: { id } });
   }
 
   async downloadGeneration(id: string): Promise<Buffer> {
     this.logger.log(`Processing download request for generation: ${id}`);
     const generation = await this.prisma.generation.findUnique({ where: { id } });
-    if (!generation) {
-      throw new NotFoundException('Generation not found');
-    }
+    if (!generation) throw new NotFoundException('Generation not found');
 
     const originalUrl = generation.resultImageUrl.replace('/f_auto,q_auto/', '/');
     const response = await axios.get(originalUrl, { responseType: 'arraybuffer' });
@@ -200,7 +204,7 @@ export class GenerationService {
 
     const watermarkedBuffer = await sharp(imageBuffer)
       .composite([{ input: logoPath, gravity: 'southeast' }])
-      .png({ quality: 90, compressionLevel: 6 }) // 明确输出为PNG并进行压缩
+      .png({ quality: 90, compressionLevel: 6 })
       .toBuffer();
 
     this.logger.log(`Successfully watermarked image: ${id}`);

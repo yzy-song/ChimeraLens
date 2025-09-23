@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from '@/hooks/use-user';
 import { TemplateGallery } from '@/components/template-gallery';
 import { Template } from '@/hooks/use-templates';
-import { ImageUploader } from '@/components/image-uploader';
+import { ImageUploader, ImageUploaderResult } from '@/components/image-uploader';
 import { useGeneration } from '@/hooks/use-generation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { UserNav } from '@/components/user-nav';
 import { useTemplates } from '@/hooks/use-templates';
-import { Wand2, Crown, Download } from 'lucide-react';
+import { Wand2, Download } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDownloadGeneration } from '@/hooks/use-download-generation';
 
@@ -32,7 +32,8 @@ const funnyLoadingTexts = [
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  // --- 核心改动 1: 状态类型从 File | null 变为更丰富的 ImageUploaderResult | null ---
+  const [sourceData, setSourceData] = useState<ImageUploaderResult | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [loadingText, setLoadingText] = useState(funnyLoadingTexts[0]);
   const [progress, setProgress] = useState(0);
@@ -80,7 +81,8 @@ export default function Home() {
   }, []);
 
   const handleGenerateClick = () => {
-    if (!sourceFile || !selectedTemplate) {
+    // --- 核心改动 2: 判断 sourceData.file 是否存在 ---
+    if (!sourceData?.file || !selectedTemplate) {
       toast.warning('Please select a template and upload your photo first.');
       return;
     }
@@ -90,9 +92,10 @@ export default function Home() {
     }
     setProgress(0);
     generate({
-      sourceImage: sourceFile,
+      sourceImage: sourceData.file,
       templateId: selectedTemplate.id,
       modelKey: 'stable-swap-v1',
+      faceSelection: sourceData.faceSelection,
     });
   };
 
@@ -169,7 +172,8 @@ export default function Home() {
               <CardDescription>We recommend a clear, front-facing portrait. </CardDescription>
             </CardHeader>
             <CardContent>
-              <ImageUploader onFileSelect={setSourceFile} />
+              {/* --- 核心改动 4: 将 onFileSelect 的 prop 改为 onFileSelect={setSourceData} --- */}
+              <ImageUploader onFileSelect={setSourceData} />
             </CardContent>
           </Card>
         </div>
@@ -187,7 +191,6 @@ export default function Home() {
               )}
               {isError && <p className="text-destructive p-4">Error: {error.message}</p>}
               
-              {/* --- 核心修正 --- */}
               {generationResult && !isPending && (
                 <div className="flex flex-col items-center gap-4 w-full">
                   <Image src={generationResult.resultImageUrl} alt="Generated result" width={512} height={512} className="object-contain rounded-md"/>
@@ -212,7 +215,7 @@ export default function Home() {
       <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-background/80 backdrop-blur-sm border-t lg:hidden">
         <Button 
           onClick={handleGenerateClick}
-          disabled={!selectedTemplate || !sourceFile || isPending}
+          disabled={!selectedTemplate || !sourceData?.file || isPending}
           size="lg"
           className="w-full h-14 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-700 text-white shadow-lg hover:scale-105 transition-transform"
         >
@@ -224,7 +227,7 @@ export default function Home() {
       <div className="hidden lg:block fixed bottom-4 right-8 z-40"> 
          <Button 
           onClick={handleGenerateClick}
-          disabled={!selectedTemplate || !sourceFile || isPending}
+          disabled={!selectedTemplate || !sourceData?.file || isPending}
           size="lg"
           className="h-16 px-8 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-700 text-white shadow-lg hover:scale-105 transition-transform"
         >

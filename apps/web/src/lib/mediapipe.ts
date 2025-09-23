@@ -1,67 +1,87 @@
-import { FaceDetector, FilesetResolver } from "@mediapipe/tasks-vision";
-import { toast } from "sonner";
+import {
+  FaceDetector,
+  FilesetResolver,
+  Detection,
+} from "@mediapipe/tasks-vision";
+
+// 定义返回的人脸检测结果的类型，保持与后端DTO一致
+export interface FaceBoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 let faceDetector: FaceDetector | null = null;
-let isInitializing = false;
+let faceDetectorPromise: Promise<FaceDetector> | null = null;
 
-// Function to initialize the MediaPipe FaceDetector.
-// This should be called once when the application loads.
-export async function initializeFaceDetector() {
-  // If initialization is already in progress or completed, do nothing.
-  if (faceDetector || isInitializing) {
-    return;
+const initializeFaceDetector = async (): Promise<FaceDetector> => {
+  if (faceDetector) {
+    return faceDetector;
   }
-  isInitializing = true;
-  try {
-    console.log("Initializing MediaPipe Face Detector...");
-    // Create the task from the WASM files hosted on the CDN.
+  if (faceDetectorPromise) {
+    return faceDetectorPromise;
+  }
+
+  faceDetectorPromise = (async () => {
     const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
     );
-    faceDetector = await FaceDetector.createFromOptions(vision, {
+    const detector = await FaceDetector.createFromOptions(vision, {
       baseOptions: {
-        // Use a model that's fast and optimized for web.
         modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite`,
-        delegate: "GPU", // Use GPU for better performance.
+        delegate: "GPU" as const,
       },
       runningMode: "IMAGE",
     });
-    console.log("MediaPipe Face Detector initialized successfully.");
-  } catch (error) {
-    console.error("Error initializing MediaPipe Face Detector:", error);
-    toast.error(
-      "Could not load AI models for face detection. Please refresh the page."
-    );
-    faceDetector = null; // Ensure it's null on failure.
-  } finally {
-    isInitializing = false;
-  }
-}
+    faceDetector = detector;
+    console.log("FaceDetector initialized successfully.");
+    return detector;
+  })();
 
-// Function to detect a face in an image using the initialized detector.
-export async function detectFace(image: HTMLImageElement): Promise<boolean> {
-  // Wait if initialization is still in progress.
-  while (isInitializing) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
+  return faceDetectorPromise;
+};
 
-  if (!faceDetector) {
-    console.log("Face detector not ready, attempting to initialize now...");
-    await initializeFaceDetector();
-    // If it still fails after an explicit attempt, report the error.
-    if (!faceDetector) {
-      toast.error("Face detection models are not available. Please try again.");
-      return false;
-    }
-  }
-
+// 这个函数现在会返回所有检测到的人脸的包围盒(bounding box)数组
+export const detectFaces = async (file: File): Promise<FaceBoundingBox[]> => {
   try {
-    const detections = faceDetector.detect(image);
-    // If the detections array is not empty, it means at least one face was found.
-    return detections.detections.length > 0;
+    const detector = await initializeFaceDetector();
+    const image = new Image();
+    const imageUrl = URL.createObjectURL(file);
+
+    return new Promise((resolve, reject) => {
+      image.onload = () => {
+        const result = detector.detect(image);
+        URL.revokeObjectURL(imageUrl);
+
+        if (!result || result.detections.length === 0) {
+          resolve([]);
+        } else {
+          const formattedDetections: FaceBoundingBox[] = result.detections
+            .map((d) => d.boundingBox)
+            .filter((b): b is Detection["boundingBox"] => !!b) // 确保 boundingBox 存在
+            .map((box) =>
+              box
+                ? {
+                    x: box.originX,
+                    y: box.originY,
+                    width: box.width,
+                    height: box.height,
+                  }
+                : null
+            )
+            .filter((b): b is FaceBoundingBox => b !== null);
+          resolve(formattedDetections);
+        }
+      };
+      image.onerror = (err) => {
+        URL.revokeObjectURL(imageUrl);
+        reject(err);
+      };
+      image.src = imageUrl;
+    });
   } catch (error) {
-    console.error("Error during face detection:", error);
-    toast.error("An error occurred during face detection.");
-    return false;
+    console.error("Error in detectFaces:", error);
+    return [];
   }
-}
+};

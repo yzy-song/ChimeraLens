@@ -17,6 +17,7 @@ interface GenerationPayload {
   sourceImage: File;
   templateId: string;
   modelKey: string;
+  faceSelection?: { x: number; y: number; width: number; height: number }; // 可选的人脸选择坐标
 }
 
 // 调用 API 的函数

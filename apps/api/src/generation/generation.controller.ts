@@ -51,8 +51,8 @@ export class GenerationController {
   }
 
   @Get()
-  @UseInterceptors(CacheInterceptor) // <-- 1. 使用缓存拦截器
-  @CacheTTL(3600 * 1000) // <-- 2. 设置缓存过期时间为 1 小时 (3600 秒)
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(3600 * 1000)
   @ApiOperation({ summary: '获取当前用户的生成历史' })
   @ApiBearerAuth()
   @UseGuards(JwtOptionalGuard)
@@ -87,20 +87,20 @@ export class GenerationController {
     if (!user) {
       throw new BadRequestException('User not found.');
     }
-    if (!createGenerationDto.templateId || !createGenerationDto.modelKey) {
-      throw new BadRequestException('Missing required fields: templateId or modelKey.');
+
+    // 注意: 由于 faceSelection 是 JSON 字符串，我们需要在这里解析它
+    if (typeof createGenerationDto.faceSelection === 'string') {
+      try {
+        createGenerationDto.faceSelection = JSON.parse(createGenerationDto.faceSelection);
+      } catch (e) {
+        throw new BadRequestException('Invalid faceSelection format.');
+      }
     }
-    // Ensure hasPassword is present and boolean
-    const userWithHasPassword = {
-      ...user,
-      hasPassword: !!user.hasPassword,
-    };
+
     return this.generationService.createGeneration(
-      userWithHasPassword,
+      user,
       sourceImage,
-      createGenerationDto.templateId,
-      createGenerationDto.modelKey,
-      createGenerationDto.options,
+      createGenerationDto, // 传递整个 DTO
     );
   }
 
