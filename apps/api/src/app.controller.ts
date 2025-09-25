@@ -11,4 +11,9 @@ export class AppController {
     // 如果中间件成功运行，这里应该能看到 user 对象
     return req.user || { message: 'No user found, guestId header may be missing.' };
   }
+
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok' };
+  }
 }
