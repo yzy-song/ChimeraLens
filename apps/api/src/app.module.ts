@@ -17,6 +17,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { BillingModule } from './billing/billing.module';
 import { EmailModule } from './email/email.module';
 import { CacheModule } from './cache/cache.module';
+import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
 @Module({
   imports: [
     CacheModule,
@@ -36,6 +37,7 @@ import { CacheModule } from './cache/cache.module';
     AuthModule,
     BillingModule,
     EmailModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [

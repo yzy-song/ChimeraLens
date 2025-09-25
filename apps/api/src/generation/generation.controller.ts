@@ -16,6 +16,7 @@ import {
   BadRequestException,
   StreamableFile,
   Res,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GenerationService } from './generation.service';
@@ -39,6 +40,8 @@ export class GenerationController {
   constructor(private readonly generationService: GenerationService) {}
 
   @Get(':id')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(3600 * 1000)
   @ApiOperation({ summary: '获取单个生成作品的详情' })
   @ApiResponse({ status: 200, description: '返回作品详情' })
   @ApiCommonResponses()
@@ -51,12 +54,11 @@ export class GenerationController {
   }
 
   @Get()
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(3600 * 1000)
   @ApiOperation({ summary: '获取当前用户的生成历史' })
   @ApiBearerAuth()
   @UseGuards(JwtOptionalGuard)
   async findAll(@User() user: RequestWithUser['user'], @Query() paginationDto: PaginationDto) {
+    console.log('findAll called with user:', user, 'and paginationDto:', paginationDto);
     if (!user) {
       return paginate([], 0, paginationDto.page, paginationDto.limit);
     }
@@ -116,5 +118,16 @@ export class GenerationController {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Content-Disposition', `attachment; filename="chimeralens-${id}.png"`);
     res.send(fileBuffer);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除生成作品' })
+  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiCommonResponses()
+  @ApiBearerAuth()
+  @UseGuards(JwtOptionalGuard)
+  async remove(@Param('id') id: string, @User() user: RequestWithUser['user']) {
+    await this.generationService.remove(id, user.id);
+    return { success: true };
   }
 }

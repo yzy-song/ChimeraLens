@@ -3,7 +3,7 @@ import { Injectable, ForbiddenException, Logger, NotFoundException, BadRequestEx
 import { ConfigService } from '@nestjs/config';
 import { User } from '@chimeralens/db';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { ReplicateProvider } from './providers/replicate.provider';
 import { TEMPLATES_DATA } from '../templates/templates.data';
 import { paginate } from 'src/common/utils/pagination.util';
@@ -21,23 +21,8 @@ export class GenerationService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly replicateProvider: ReplicateProvider,
-  ) {
-    cloudinary.config({
-      cloud_name: this.configService.get<string>('CLOUDINARY_CLOUD_NAME'),
-      api_key: this.configService.get<string>('CLOUDINARY_API_KEY'),
-      api_secret: this.configService.get<string>('CLOUDINARY_API_SECRET'),
-    });
-  }
-
-  private optimizeCloudinaryUrl(url: string): string {
-    if (!url || !url.includes('/upload/')) {
-      return url;
-    }
-    const parts = url.split('/upload/');
-    const optimizedUrl = `${parts[0]}/upload/f_auto,q_auto/${parts[1]}`;
-    this.logger.log(`Optimizing Cloudinary URL: ${url} -> ${optimizedUrl}`);
-    return optimizedUrl;
-  }
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   private async _cropImageToFace(
     imageBuffer: Buffer,
@@ -58,30 +43,6 @@ export class GenerationService {
     } catch (error) {
       this.logger.error('Failed to crop image', error);
       throw new BadRequestException('Failed to process the selected face area.');
-    }
-  }
-
-  private async uploadImageFromBuffer(fileBuffer: Buffer): Promise<UploadApiResponse> {
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream({ resource_type: 'image', folder: 'chimeralens/user_uploads' }, (error, result) => {
-          if (error) return reject(new Error(error.message || String(error)));
-          if (!result) return reject(new Error('Cloudinary upload failed.'));
-          resolve(result);
-        })
-        .end(fileBuffer);
-    });
-  }
-
-  private async uploadImageFromUrl(imageUrl: string): Promise<UploadApiResponse> {
-    try {
-      this.logger.log(`Transferring image from URL to Cloudinary: ${imageUrl}`);
-      const result = await cloudinary.uploader.upload(imageUrl, { folder: 'chimeralens/results' });
-      this.logger.log('Image transferred to Cloudinary successfully.');
-      return result;
-    } catch (error) {
-      this.logger.error('Failed to transfer image from URL to Cloudinary', error);
-      throw new Error('Failed to save the generated image.');
     }
   }
 
@@ -109,9 +70,9 @@ export class GenerationService {
       imageBufferToProcess = await this._cropImageToFace(sourceImage.buffer, faceSelection);
     }
 
-    // 上传（可能被裁剪过的）图片到 Cloudinary
-    const sourceImageUpload = await this.uploadImageFromBuffer(imageBufferToProcess);
-    const sourceImageUrl = this.optimizeCloudinaryUrl(sourceImageUpload.secure_url);
+    // 上传图片到 Cloudinary
+    const sourceImageUpload = await this.cloudinaryService.uploadImageFromBuffer(imageBufferToProcess);
+    const sourceImageUrl = this.cloudinaryService.optimizeCloudinaryUrl(sourceImageUpload.secure_url);
 
     const modelInput = modelConfig.formatInput({ templateImageUrl: template.imageUrl, sourceImageUrl }, options);
     const modelId = modelConfig.id;
@@ -137,12 +98,12 @@ export class GenerationService {
       throw new Error('AI generation failed to return a valid image URL.');
     }
 
-    const finalImage = await this.uploadImageFromUrl(temporaryResultUrl);
-    const optimizedUrl = this.optimizeCloudinaryUrl(finalImage.secure_url);
+    const finalImage = await this.cloudinaryService.uploadImageFromUrl(temporaryResultUrl);
+    const optimizedUrl = this.cloudinaryService.optimizeCloudinaryUrl(finalImage.secure_url);
 
     // --- 保存原始、完整的图片URL ---
     const originalSourceImageUrl = faceSelection
-      ? (await this.uploadImageFromBuffer(sourceImage.buffer)).secure_url
+      ? (await this.cloudinaryService.uploadImageFromBuffer(sourceImage.buffer)).secure_url
       : sourceImageUrl;
 
     const [updatedUser, newGeneration] = await this.prisma.$transaction([
@@ -154,7 +115,7 @@ export class GenerationService {
         data: {
           id: finalImage.public_id.split('/').pop(), // 获取更可靠的ID
           userId: user.id,
-          sourceImageUrl: this.optimizeCloudinaryUrl(originalSourceImageUrl),
+          sourceImageUrl: this.cloudinaryService.optimizeCloudinaryUrl(originalSourceImageUrl),
           templateImageUrl: template.imageUrl,
           resultImageUrl: optimizedUrl,
         },
@@ -209,5 +170,26 @@ export class GenerationService {
 
     this.logger.log(`Successfully watermarked image: ${id}`);
     return watermarkedBuffer;
+  }
+
+  async remove(id: string, userId: string) {
+    const generation = await this.prisma.generation.findUnique({ where: { id } });
+    if (!generation || generation.userId !== userId) {
+      throw new Error('Not allowed to delete this artwork');
+    }
+
+    // 删除 Cloudinary 图片
+    const sourcePublicId = this.cloudinaryService.getPublicIdFromUrl(generation.sourceImageUrl);
+    const resultPublicId = this.cloudinaryService.getPublicIdFromUrl(generation.resultImageUrl);
+
+    if (sourcePublicId) {
+      await this.cloudinaryService.deleteImage(sourcePublicId, 'chimeralens/user_uploads');
+    }
+    if (resultPublicId && resultPublicId !== sourcePublicId) {
+      await this.cloudinaryService.deleteImage(resultPublicId, 'chimeralens/results');
+    }
+
+    await this.prisma.generation.delete({ where: { id } });
+    return { success: true };
   }
 }

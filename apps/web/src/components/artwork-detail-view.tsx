@@ -6,9 +6,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShareButton } from '@/components/share-button';
-import { Download, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft, Trash } from 'lucide-react';
 import { useGenerationById } from '@/hooks/use-generation-by-id';
 import { useDownloadGeneration } from '@/hooks/use-download-generation';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface ArtworkDetailViewProps {
   id: string;
@@ -20,11 +22,34 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
 
   const { download, isDownloading } = useDownloadGeneration();
 
+  const [showError, setShowError] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const generation = response?.data || initialData;
 
   const handleDownload = () => {
     if (generation.id) {
       download(generation.id);
+    }
+  };
+
+  const handleDelete = async () => {
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setShowConfirm(false);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/generations/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (res.ok) {
+      window.location.href = '/gallery';
+    } else {
+      setShowError(true);
     }
   };
 
@@ -71,8 +96,37 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
             {isDownloading ? 'Preparing...' : 'Download'}
           </Button>
           <ShareButton artworkUrl={pageUrl} title={title} />
+          <Button variant="destructive" onClick={handleDelete}>
+            <Trash className="mr-2 h-5 w-5" />
+            Delete
+          </Button>
         </div>
       </main>
+      {/* 删除确认模态框 */}
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Confirmation</DialogTitle>
+          </DialogHeader>
+          <div>Are you sure you want to delete this artwork? This action cannot be undone.</div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* 删除失败模态框 */}
+      <Dialog open={showError} onOpenChange={setShowError}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Failed</DialogTitle>
+          </DialogHeader>
+          <div>Failed to delete this artwork. Please try again later or check your permissions.</div>
+          <DialogFooter>
+            <Button onClick={() => setShowError(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

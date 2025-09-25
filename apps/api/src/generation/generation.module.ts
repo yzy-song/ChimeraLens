@@ -3,8 +3,9 @@ import { GenerationService } from './generation.service';
 import { GenerationController } from './generation.controller';
 import { ReplicateProvider } from './providers/replicate.provider';
 import { HuggingFaceProvider } from './providers/huggingface.provider';
-import { CacheModule } from '@nestjs/cache-manager';
+import { CloudinaryModule } from 'src/common/cloudinary/cloudinary.module';
 @Module({
+  imports: [CloudinaryModule],
   controllers: [GenerationController],
   providers: [GenerationService, ReplicateProvider, HuggingFaceProvider], // <-- 在这里注册
 })

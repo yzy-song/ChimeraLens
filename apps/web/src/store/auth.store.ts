@@ -14,11 +14,13 @@ export const useAuthStore = create<AuthState>()(
       setToken: (token) => {
         // 登录成功时，也清除 guestId
         localStorage.removeItem("guestId");
+        localStorage.setItem("auth_token", token);
         set({ token });
       },
       logout: () => {
         // 登出时，同时清除 token 和 guestId
         localStorage.removeItem("guestId");
+        localStorage.removeItem("auth_token");
         set({ token: null });
       },
     }),
