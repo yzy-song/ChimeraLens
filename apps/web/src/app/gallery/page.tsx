@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter  } from '@/components/ui/dialog';
 import { useGenerations } from '@/hooks/use-generations';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { Generation } from '@chimeralens/db';
 import { Skeleton } from '@/components/ui/skeleton'; // 导入骨架屏组件
@@ -37,8 +38,10 @@ export default function GalleryPage() {
     </div>
   );
 
-  const handleSelect = (id: string, checked: boolean) => {
-    setSelectedIds(checked
+  const handleSelect = (id: string, checked: boolean | string) => {
+    // 处理 Checkbox 组件的 checked 值（可能是 boolean 或 "indeterminate"）
+    const isChecked = checked === true;
+    setSelectedIds(isChecked
       ? [...selectedIds, id]
       : selectedIds.filter(itemId => itemId !== id)
     );
@@ -112,32 +115,31 @@ export default function GalleryPage() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {generations.map((gen) => (
-                <div key={gen.id} className="relative group">
-                  <input
-                    type="checkbox"
-                    className="absolute top-2 left-2 z-10"
-                    checked={selectedIds.includes(gen.id)}
-                    onChange={e => handleSelect(gen.id, e.target.checked)}
-                  />
-                  <Link href={`/gallery/${gen.id}`} passHref>
-                    <Card className="overflow-hidden transition-transform hover:scale-105">
-                      <CardContent className="p-0">
-                        <div className="relative aspect-square">
-                          <Image
-                            src={gen.resultImageUrl}
-                            alt="Generated image"
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 50vw, 25vw"
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </div>
-              ))}
-            </div>
+            {generations.map((gen) => (
+              <div key={gen.id} className="relative group">
+                <Checkbox
+                  checked={selectedIds.includes(gen.id)}
+                  onCheckedChange={(checked) => handleSelect(gen.id, checked)}
+                  className="absolute top-2 left-2 w-6 h-6 z-10 bg-background/80 backdrop-blur-sm"
+                />
+                <Link href={`/gallery/${gen.id}`} passHref>
+                  <Card className="overflow-hidden transition-transform hover:scale-105">
+                    <CardContent className="p-0">
+                      <div className="relative aspect-square">
+                        <Image
+                          src={gen.resultImageUrl}
+                          alt="Generated image"
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </div>
+            ))}
+          </div>
           </>
         )}
 
