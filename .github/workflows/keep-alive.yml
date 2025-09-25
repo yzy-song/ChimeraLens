@@ -1,0 +1,51 @@
+name: Keep Render Backend Alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # 每 10 分钟运行一次
+  workflow_dispatch:         # 允许手动触发
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check current time and maybe ping
+        run: |
+          START_HOUR=${{ secrets.START_HOUR }}
+          END_HOUR=${{ secrets.END_HOUR }}
+          PING_URLS=${{ secrets.PING_URLS }}
+          MAX_DELAY=${{ secrets.MAX_DELAY }}
+
+          # 默认最大延迟 60 秒
+          if [ -z "$MAX_DELAY" ]; then
+            MAX_DELAY=60
+          fi
+
+          # 当前小时 (0-23)
+          CURRENT_HOUR=$(date +"%H")
+
+          echo "⏰ Current hour: $CURRENT_HOUR"
+          echo "🕗 Active window: $START_HOUR - $END_HOUR"
+
+          # 判断是否在活跃时段
+          if [ "$CURRENT_HOUR" -ge "$START_HOUR" ] && [ "$CURRENT_HOUR" -lt "$END_HOUR" ]; then
+            echo "✅ Within active hours, proceeding..."
+
+            # 随机延迟 (0 ~ MAX_DELAY 秒)
+            DELAY=$((RANDOM % MAX_DELAY))
+            echo "⏳ Sleeping for $DELAY seconds before request..."
+            sleep $DELAY
+
+            # 循环请求多个 URL
+            for url in $PING_URLS; do
+              echo "🌍 Pinging $url ..."
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+              if [ "$STATUS" -eq 200 ]; then
+                echo "✅ $url is UP (HTTP $STATUS)"
+              else
+                echo "⚠️ $url returned HTTP $STATUS"
+              fi
+            done
+          else
+            echo "⏹ Outside active hours, skipping ping."
+          fi
