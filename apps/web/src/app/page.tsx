@@ -137,7 +137,7 @@ export default function Home() {
       </header>
 
       <main className="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8 pb-24 lg:pb-8">
-        <div className="flex flex-col lg:w-1/2 gap-6 order-2 lg:order-1">
+        <div className="flex flex-col lg:w-1/2 gap-6 order-1 lg:order-2">
           <Card className="flex-grow">
             <CardHeader>
               <CardTitle>1. Choose a Style</CardTitle>
@@ -181,7 +181,7 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="lg:w-1/2 flex flex-col gap-4 order-1 lg:order-2">
+        <div className="lg:w-1/2 flex flex-col gap-4 order-2 lg:order-1">
           <Card className="w-full flex-grow aspect-square lg:sticky lg:top-24">
             <CardContent className="flex items-center justify-center h-full p-2">
               {isPending && (
