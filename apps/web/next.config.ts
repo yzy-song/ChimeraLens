@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const runtimeCaching = require("next-pwa/cache");
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  runtimeCaching,
+  disable: process.env.NODE_ENV === "development",
+});
+
+const nextConfig: NextConfig = withPWA({
+  typedRoutes: true,
   images: {
     remotePatterns: [
       // cloudinary图库
@@ -27,10 +36,9 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "localhost",
     "127.0.0.1",
-    // 还可以加上你常用的本地域名或其他IP
     "https://6af84b4d47c9.ngrok-free.app",
-    "192.168.1.148",
+    "192.168.1.147",
   ],
-};
+});
 
 export default nextConfig;

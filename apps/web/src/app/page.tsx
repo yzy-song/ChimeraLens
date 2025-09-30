@@ -18,6 +18,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDownloadGeneration } from '@/hooks/use-download-generation';
+import { messaging, getToken, onMessage } from "@/lib/firebase";
 
 const funnyLoadingTexts = [
   'Reticulating splines...',
@@ -76,11 +77,38 @@ export default function Home() {
   useEffect(() => {
     setIsClient(true);
     if (!localStorage.getItem('guestId')) {
-      console.log('Setting new guestId111111111111');
       localStorage.setItem('guestId', uuidv4());
     } else {  
       console.log('Existing guestId:', localStorage.getItem('guestId'));
     }
+  }, []);
+
+  useEffect(() => {
+    if (!messaging) return;
+
+    Notification.requestPermission().then((permission) => {
+      if (!messaging) {
+        console.warn("Firebase messaging is not available");
+        return;
+      }
+      if (permission === "granted") {
+        getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY!,
+        }).then((currentToken) => {
+          if (currentToken) {
+            console.log("FCM Token:", currentToken);
+            // TODO: 可能要把这个 token 发到后端存起来
+          } else {
+            console.warn("No registration token available.");
+          }
+        });
+      }
+    });
+
+    onMessage(messaging, (payload) => {
+      console.log("Message received. ", payload);
+      alert(payload.notification?.title);
+    });
   }, []);
 
   const handleGenerateClick = () => {
