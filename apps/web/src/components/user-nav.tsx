@@ -49,6 +49,9 @@ export function UserNav() {
             <DropdownMenuItem asChild>
               <Link href="/gallery">My Creations</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/account">Account Settings</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setSecurityModalOpen(true)}>
               Security
             </DropdownMenuItem>

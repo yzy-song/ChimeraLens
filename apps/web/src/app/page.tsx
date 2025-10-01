@@ -76,7 +76,6 @@ export default function Home() {
   useEffect(() => {
     setIsClient(true);
     if (!localStorage.getItem('guestId')) {
-      console.log('Setting new guestId111111111111');
       localStorage.setItem('guestId', uuidv4());
     } else {  
       console.log('Existing guestId:', localStorage.getItem('guestId'));
