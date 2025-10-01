@@ -67,7 +67,10 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
   if (!generation) return <div>Artwork not found.</div>;
 
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const title = `My AI Creation #${generation.id.substring(0, 6)}`;
+  let title = `My AI Creation #${generation.id.substring(0, 6)}`;
+  if(!isOwner){
+    title = `Created by User #${generation.userId?.substring(0, 6)}`;
+  }
 
   return (
     <div className="w-full min-h-screen bg-background flex flex-col">
