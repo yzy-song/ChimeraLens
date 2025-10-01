@@ -11,13 +11,19 @@ import { useGenerationById } from '@/hooks/use-generation-by-id';
 import { useDownloadGeneration } from '@/hooks/use-download-generation';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-
+import { useUser } from '@/hooks/use-user'; 
+import { useRouter } from 'next/navigation';
 interface ArtworkDetailViewProps {
   id: string;
   initialData: Generation;
 }
 
 export default function ArtworkDetailView({ id, initialData }: ArtworkDetailViewProps) {
+  const router = useRouter();
+
+  const { data: userResponse } = useUser();
+  const currentUser = userResponse?.data.user;
+
   const { data: response, isLoading, isError, error } = useGenerationById(id);
 
   const { download, isDownloading } = useDownloadGeneration();
@@ -26,6 +32,8 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
   const [showConfirm, setShowConfirm] = useState(false);
 
   const generation = response?.data || initialData;
+
+  const isOwner = currentUser && !currentUser.isGuest && currentUser.id === generation.userId;
 
   const handleDownload = () => {
     if (generation.id) {
@@ -47,7 +55,8 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
       },
     });
     if (res.ok) {
-      window.location.href = '/gallery';
+      // window.location.href = '/gallery';
+      router.push('/gallery');
     } else {
       setShowError(true);
     }
@@ -90,16 +99,24 @@ export default function ArtworkDetailView({ id, initialData }: ArtworkDetailView
             </div>
           </CardContent>
         </Card>
+
+        {/* 3. 使用 isOwner 变量来条件渲染按钮组 */}
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={handleDownload} disabled={isDownloading}>
-            <Download className="mr-2 h-5 w-5" />
-            {isDownloading ? 'Preparing...' : 'Download'}
-          </Button>
-          <ShareButton artworkUrl={pageUrl} title={title} />
-          <Button variant="destructive" onClick={handleDelete}>
-            <Trash className="mr-2 h-5 w-5" />
-            Delete
-          </Button>
+          {isOwner ? (
+            <>
+              <Button variant="outline" onClick={handleDownload} disabled={isDownloading}>
+                <Download className="mr-2 h-5 w-5" />
+                {isDownloading ? 'Preparing...' : 'Download'}
+              </Button>
+              <ShareButton artworkUrl={pageUrl} title={title} />
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash className="mr-2 h-5 w-5" />
+                Delete
+              </Button>
+            </>
+          ) : (
+             <ShareButton artworkUrl={pageUrl} title={title} />
+          )}
         </div>
       </main>
       {/* 删除确认模态框 */}
