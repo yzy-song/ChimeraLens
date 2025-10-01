@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UsersService } from 'src/users/users.service';
 import { EmailModule } from 'src/email/email.module';
 import { EmailService } from 'src/email/email.service';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Module({
   imports: [
@@ -32,6 +33,6 @@ import { EmailService } from 'src/email/email.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, EmailService, JwtStrategy],
+  providers: [AuthService, UsersService, EmailService, JwtStrategy, CloudinaryService],
 })
 export class AuthModule {}

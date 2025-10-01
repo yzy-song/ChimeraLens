@@ -12,7 +12,7 @@ interface UpdateProfilePayload {
 const updateProfile = async (
   payload: UpdateProfilePayload
 ): Promise<ApiResponse<{ message: string }>> => {
-  const { data } = await api.patch("/auth/profile", payload);
+  const { data } = await api.patch("/users/profile", payload);
   return data;
 };
 

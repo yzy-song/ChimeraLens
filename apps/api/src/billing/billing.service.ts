@@ -52,4 +52,11 @@ export class BillingService {
 
     return { sessionId: session.id, url: session.url };
   }
+
+  async getOrderHistory(userId: string) {
+    return await this.prisma.order.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

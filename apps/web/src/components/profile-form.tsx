@@ -1,6 +1,3 @@
-// 在 `/account/page.tsx` 中替换 ProfileForm
-// 或者创建一个新文件 `apps/web/src/components/profile-form.tsx`
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';

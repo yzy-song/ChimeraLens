@@ -18,6 +18,7 @@ model User {
   email     String?  @unique
   name      String?
   password  String?  // <-- 添加密码字段
+  avatarUrl String?
   role      Role     @default(USER) // <-- 添加角色字段
 
   isGuest   Boolean  @default(true)
@@ -34,7 +35,24 @@ model User {
   updatedAt DateTime @updatedAt
 
   generations Generation[]
+  orders      Order[]
   @@index([fingerprint]) // 为指纹添加索引以加快查询
+}
+
+model Order {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  amount           Int      // 支付金额 (以分为单位，例如 500 表示 5.00)
+  credits          Int      // 购买的点数
+  currency         String   @default("eur")
+  stripeCheckoutId String   @unique
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Generation {

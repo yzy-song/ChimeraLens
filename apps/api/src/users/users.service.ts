@@ -4,18 +4,39 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateProfileDto } from '../auth/dto/update-profile.dto';
 
 import { User as UserModel } from '@chimeralens/db';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
     this.logger.log(`更新用户信息: userId=${userId}`);
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: updateProfileDto,
+    });
+
+    const { password, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword;
+  }
+
+  async updateAvatar(userId: string, file: Express.Multer.File) {
+    this.logger.log(`Updating avatar for user: ${userId}`);
+
+    // 上传到 Cloudinary
+    const uploadResult = await this.cloudinaryService.uploadImageFromBuffer(file.buffer, 'chimeralens/avatars');
+    const avatarUrl = this.cloudinaryService.optimizeCloudinaryUrl(uploadResult.secure_url);
+
+    // 更新数据库
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
     });
 
     const { password, ...userWithoutPassword } = updatedUser;

@@ -32,16 +32,28 @@ export class StripeWebhookService {
       return;
     }
 
+    const credits = parseInt(creditsToAdd, 10);
+    const amount = session.amount_total;
+
     this.logger.log(`Payment successful for user ${userId}. Adding ${creditsToAdd} credits.`);
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        credits: {
-          increment: parseInt(creditsToAdd, 10),
+    await this.prisma.$transaction([
+      // 1. 增加用户点数
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { credits: { increment: credits } },
+      }),
+      // 2. 创建订单记录
+      this.prisma.order.create({
+        data: {
+          userId,
+          credits,
+          amount,
+          currency: session.currency,
+          stripeCheckoutId: session.id,
         },
-      },
-    });
+      }),
+    ]);
   }
 
   async handleChargeRefunded(event: Stripe.Event) {
@@ -62,15 +74,15 @@ export class StripeWebhookService {
       return;
     }
 
+    const credits = parseInt(creditsToAdd, 10);
     this.logger.log(`Refunding ${creditsToAdd} credits from user ${userId}`);
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        credits: {
-          decrement: parseInt(creditsToAdd, 10), // 扣除点数
-        },
-      },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: credits } },
+      }),
+      // TODO可以在这里更新订单状态为 "REFUNDED"
+    ]);
   }
 }

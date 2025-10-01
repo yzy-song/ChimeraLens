@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
 import { BillingService } from './billing.service';
 import { AuthGuard } from '@nestjs/passport';
 import { User as UserModel } from '@chimeralens/db';
@@ -19,5 +19,13 @@ export class BillingController {
   @ApiCommonResponses()
   createCheckoutSession(@User() user: UserModel, @Body('priceId') priceId: string) {
     return this.billingService.createCheckoutSession(user, priceId);
+  }
+
+  @Get('history')
+  @ApiOperation({ summary: 'Get user order history' })
+  @ApiResponse({ status: 200, description: 'Returns the list of orders.' })
+  @ApiCommonResponses()
+  getOrderHistory(@User('id') userId: string) {
+    return this.billingService.getOrderHistory(userId);
   }
 }

@@ -7,9 +7,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ProfileForm } from '@/components/profile-form';
 
-function OrderHistory() {
-    return <div>Order history will be here.</div>
-}
+import { OrderHistory } from '@/components/order-history';
+import { AvatarUploader } from '@/components/avatar-uploader';
 
 export default function AccountPage() {
   return (
@@ -38,6 +37,16 @@ export default function AccountPage() {
             </div>
             <Separator />
             
+            <Card>
+                <CardHeader>
+                    <CardTitle>Avatar</CardTitle>
+                    <CardDescription>Update your profile picture.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AvatarUploader />
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Profile</CardTitle>

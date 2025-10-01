@@ -16,8 +16,8 @@ import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { JwtOptionalGuard } from './guards/jwt-optional.guard';
 
 import { UsersService } from 'src/users/users.service';
-import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+
 @ApiTags('认证与用户管理')
 @Controller('auth') // 定义这个 Controller 的路由前缀是 /auth
 export class AuthController {
@@ -89,16 +89,6 @@ export class AuthController {
   @ApiCommonResponses()
   async firebaseLogin(@Body() firebaseLoginDto: FirebaseLoginDto) {
     return this.authService.firebaseLogin(firebaseLoginDto.idToken);
-  }
-
-  @Patch('profile')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update current user information' })
-  @ApiResponse({ status: 200, description: 'User information updated successfully' })
-  @ApiCommonResponses()
-  @UseGuards(AuthGuard('jwt'))
-  updateProfile(@User('id') userId: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.usersService.updateProfile(userId, updateProfileDto);
   }
 
   @Patch('password')
