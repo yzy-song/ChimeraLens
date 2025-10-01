@@ -8,7 +8,7 @@ export function OrderHistory() {
 
     if (isLoading) return <p>Loading order history...</p>
     if (isError) return <p className="text-destructive">Failed to load order history.</p>
-    if (orders.length === 0) return <p>You haven't made any purchases yet.</p>
+    if (orders.length === 0) return <p>You haven&apos;t made any purchases yet.</p>;
 
     return (
         <Table>
