@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "ChimeraLens AI | Transform Your Photos",
   description: "Swap your face into stunning artistic templates with AI.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
