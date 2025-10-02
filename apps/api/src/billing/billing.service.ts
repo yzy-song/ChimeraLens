@@ -5,10 +5,15 @@ import Stripe from 'stripe';
 import { User } from '@chimeralens/db';
 
 // 假设我们把价格和点数的映射关系存在这里
-const PRICE_TO_CREDITS_MAP = {
-  price_1S8s4z5AZtVqRLhiywQF5cj3: 700,
-  price_1S8s3U5AZtVqRLhiMpWdYhvU: 250,
+const TEST_PRICE_TO_CREDITS_MAP = {
   price_1S8s2h5AZtVqRLhicy7IarMX: 100,
+  price_1S8s3U5AZtVqRLhiMpWdYhvU: 250,
+  price_1S8s4z5AZtVqRLhiywQF5cj3: 700,
+};
+const LIVE_PRICE_TO_CREDITS_MAP = {
+  price_1SDokN9cBOPN77U2JVZ4VUYt: 100,
+  price_1SDokL9cBOPN77U2UJyAlM99: 250,
+  price_1SDokG9cBOPN77U2lpaE9D02: 700,
 };
 
 @Injectable()
@@ -25,7 +30,14 @@ export class BillingService {
   }
 
   async createCheckoutSession(user: User, priceId: string) {
-    const creditsToAdd = PRICE_TO_CREDITS_MAP[priceId];
+    let creditsToAdd = 100;
+    console.log('price id:', priceId);
+    const env = process.env.NODE_ENV;
+    if (env === 'production') {
+      creditsToAdd = LIVE_PRICE_TO_CREDITS_MAP[priceId];
+    } else {
+      creditsToAdd = TEST_PRICE_TO_CREDITS_MAP[priceId];
+    }
     if (!creditsToAdd) {
       throw new Error('Invalid price ID');
     }

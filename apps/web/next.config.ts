@@ -37,7 +37,7 @@ const nextConfig: NextConfig = withPWA({
     "localhost",
     "127.0.0.1",
     "https://6af84b4d47c9.ngrok-free.app",
-    "192.168.1.147",
+    "192.168.1.149",
   ],
 });
 
