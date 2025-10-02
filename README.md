@@ -2,45 +2,18 @@
 
 **Transform your photos into stunning, stylized portraits with a single click. ChimeraLens is a full-stack AI face-swapping application that allows you to blend your face with artistic templates.**
 
-This project is a monorepo built with a modern tech stack, showcasing a complete workflow from user authentication and payment processing to AI image generation and gallery management.
-
 ![ChimeraLens Demo](https://res.cloudinary.com/deaxv6w30/image/upload/v1758833446/Gemini_Generated_Image_n1rtbpn1rtbpn1rt_hyaw8k.png)
 
-## ✨ Core Features
+## ✨ Features
 
-- **AI-Powered Face Swapping**: Upload your photo, choose a style from our curated templates, and let the AI work its magic.
-- **Guest & Registered Users**: Try the app without an account. Sign up to save your creations and manage your profile.
-- **Social & Email Login**: Quick and easy authentication using Google or traditional email and password.
-- **Credit System**: Start with free credits and purchase more through our secure Stripe integration to continue creating.
-- **Personal Gallery**: All your creations are saved in a personal, paginated gallery where you can view, download, or delete them.
-- **Intelligent Face Detection**: The app automatically detects faces in your uploaded photos. If multiple faces are found, you can select which one to use.
-- **Image Optimization**: Images are compressed and optimized for speed and quality before being sent to the AI model.
-- **Responsive Design**: A beautiful and intuitive interface that works seamlessly on both desktop and mobile devices.
-
-## 🚀 The Development Journey & My Thought Process
-
-This project started as an exploration into the exciting world of generative AI. I wanted to build a complete, production-ready application that was more than just a simple demo. My goal was to tackle real-world challenges like user management, payments, and robust backend architecture.
-
-### Phase 1: Foundation & Monorepo
-
-I chose a **monorepo architecture** using **pnpm Workspaces** and **Turborepo**. This setup allows for clean separation of concerns (`apps/web`, `apps/api`) while enabling code sharing (`packages/db`) and unified build/dev commands. It's a scalable approach that keeps the codebase organized.
-
-### Phase 2: Building the Backend with NestJS
-
-For the backend, I selected **NestJS** for its powerful, modular architecture and first-class TypeScript support. Key backend features were built incrementally:
-
-- **Database & Prisma**: I used **PostgreSQL** with **Prisma** as the ORM. Prisma's type-safe client, which is shared across the monorepo, is a game-changer for full-stack development.
-- **Authentication**: A flexible auth system was a priority. It supports both JWT-based email/password login and Firebase for Google social sign-in. A crucial piece is the **"guest" middleware**, which uses device fingerprinting to provide a seamless experience for first-time users.
-- **AI Integration**: The core of the app. I created an abstraction layer (`AiProvider`) to decouple the application from a specific AI service. Currently, it uses the **Replicate API**, with a robust polling mechanism to handle long-running AI tasks without request timeouts.
-- **Payments**: **Stripe** was integrated for credit purchases. The system uses Stripe Checkout for a secure payment flow and **webhooks** to automatically update user credits upon successful payment.
-
-### Phase 3: Crafting the Frontend with Next.js
-
-The frontend is built with **Next.js (App Router)**, offering a great developer experience and performance.
-
-- **UI/UX**: I used **Tailwind CSS** and **shadcn/ui** to build a modern, responsive, and aesthetically pleasing interface. The focus was on creating an intuitive user flow: select a template, upload a photo, and generate.
-- **State Management**: For client-side state, I used a combination of **React Query (TanStack Query)** for server state caching and **Zustand** for managing global UI state (like modals).
-- **Client-Side Intelligence**: To improve performance and success rates, I integrated **MediaPipe** for client-side face detection. This allows the user to select a face _before_ uploading, and the backend can crop the image precisely.
+- **🎨 AI-Powered Face Swapping**: Upload your photo, choose a style from our curated templates, and let the AI work its magic
+- **👥 Guest & Registered Users**: Try the app without an account. Sign up to save your creations and manage your profile
+- **🔐 Social & Email Login**: Quick and easy authentication using Google or traditional email and password
+- **💳 Credit System**: Start with free credits and purchase more through our secure Stripe integration
+- **🖼️ Personal Gallery**: All your creations are saved in a personal, paginated gallery where you can view, download, or delete them
+- **🎯 Intelligent Face Detection**: Automatically detects faces in your uploaded photos. If multiple faces are found, you can select which one to use
+- **⚡ Image Optimization**: Images are compressed and optimized for speed and quality before being sent to the AI model
+- **📱 Responsive Design**: A beautiful and intuitive interface that works seamlessly on both desktop and mobile devices
 
 ## 🛠️ Tech Stack
 
@@ -53,7 +26,20 @@ The frontend is built with **Next.js (App Router)**, offering a great developer 
 - **Payments**: Stripe
 - **Deployment**: Vercel (Frontend), Render (Backend)
 
-## 📦 Getting Started
+## 📦 Project Structure
+
+```
+chimeralens/
+├── apps/
+│   ├── api/         # NestJS backend API
+│   └── web/         # Next.js frontend application
+├── packages/
+│   ├── db/          # Shared database package (Prisma schema & client)
+│   └── ui/          # Shared UI components
+└── turbo.json       # Turborepo configuration
+```
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -61,132 +47,122 @@ The frontend is built with **Next.js (App Router)**, offering a great developer 
 - pnpm
 - PostgreSQL database
 
-### Installation & Setup
+### Installation
 
-1.  **Clone the repository:**
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/chimeralens.git
+   cd chimeralens
+   ```
 
-    ```bash
-    git clone [https://github.com/your-username/chimeralens.git](https://github.com/your-username/chimeralens.git)
-    cd chimeralens
-    ```
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
 
-2.  **Install dependencies:**
+3. **Set up environment variables**
 
-    ```bash
-    pnpm install
-    ```
+   Create a `.env` file in `apps/api/` and a `.env.local` file in `apps/web/` based on the example files:
+   ```bash
+   # apps/api/.env
+   DATABASE_URL="postgresql://username:password@localhost:5432/chimeralens"
+   JWT_SECRET="your-jwt-secret"
+   REPLICATE_API_TOKEN="your-replicate-token"
+   CLOUDINARY_CLOUD_NAME="your-cloudinary-name"
+   CLOUDINARY_API_KEY="your-cloudinary-key"
+   CLOUDINARY_API_SECRET="your-cloudinary-secret"
+   STRIPE_SECRET_KEY="your-stripe-secret"
+   STRIPE_WEBHOOK_SECRET="your-stripe-webhook-secret"
+   FIREBASE_PROJECT_ID="your-firebase-project"
+   ```
 
-3.  **Set up environment variables:**
+   ```bash
+   # apps/web/.env.local
+   NEXT_PUBLIC_API_URL="http://localhost:3000"
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="your-stripe-publishable-key"
+   NEXT_PUBLIC_FIREBASE_API_KEY="your-firebase-api-key"
+   ```
 
-    - Create a `.env` file in the root of the `apps/api` directory.
-    - Create a `.env.local` file in the root of the `apps/web` directory.
-    - Populate them based on the `.env.example` files (you'll need to create these). Key variables include database URL, JWT secret, and API keys for Replicate, Cloudinary, Stripe, etc.
+4. **Set up the database**
+   ```bash
+   pnpm -F @chimeralens/db db:push
+   ```
 
-4.  **Push database schema:**
+5. **Start development servers**
+   ```bash
+   pnpm dev
+   ```
 
-    ```bash
-    pnpm -F @chimeralens/db db:push
-    ```
+   - Frontend: http://localhost:3001
+   - Backend: http://localhost:3000
 
-5.  **Run the development servers:**
+## 💡 Core Concepts
 
-    ```bash
-    pnpm dev
-    ```
+### Monorepo Architecture
+The project uses pnpm Workspaces and Turborepo for efficient development and deployment across multiple packages.
 
-    - The Next.js frontend will be available at `http://localhost:3001`.
-    - The NestJS backend will be available at `http://localhost:3000`.
+### Authentication System
+- **Guest Mode**: Device fingerprinting allows instant access without registration
+- **Registered Users**: JWT-based authentication with email/password or Google OAuth
+- **Session Management**: Secure token-based authentication with automatic refresh
+
+### AI Integration
+- **Face Detection**: Client-side MediaPipe for pre-processing and face selection
+- **Image Processing**: Automatic cropping and optimization before AI processing
+- **Asynchronous Generation**: Polling mechanism for handling long-running AI tasks
+
+### Payment System
+- **Credit-based Model**: Users purchase credits to generate images
+- **Stripe Integration**: Secure checkout with webhook-based credit fulfillment
+- **Guest Credits**: Free trial credits for first-time users
+
+## 🔧 Development Scripts
+
+```bash
+# Development
+pnpm dev              # Start all services in development mode
+pnpm dev:api          # Start only the backend API
+pnpm dev:web          # Start only the frontend
+
+# Building
+pnpm build            # Build all packages
+pnpm build:api        # Build only the backend
+pnpm build:web        # Build only the frontend
+
+# Database
+pnpm db:push          # Push schema changes to database
+pnpm db:studio        # Open Prisma Studio
+pnpm db:generate      # Generate Prisma Client
+
+# Linting & Testing
+pnpm lint             # Lint all packages
+```
+
+## 🌟 What Makes This Project Special
+
+- **Production-Ready**: Complete with authentication, payments, and error handling
+- **Modern Stack**: Built with the latest tools and best practices
+- **Scalable Architecture**: Monorepo structure allows for easy expansion
+- **User Experience**: Seamless flow from guest to paid user
+- **Performance**: Optimized images and efficient AI processing
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## 📄 License
+
+This project is licensed under the ISC License - see the package.json file for details.
 
 ## 🔮 Future Improvements
 
-This project is a solid MVP, but there's always room to grow.
+- [ ] More AI models and style options
+- [ ] Batch processing for multiple images
+- [ ] Social sharing features
+- [ ] Mobile app development
+- [ ] Advanced editing tools
+- [ ] Subscription-based pricing
 
 ---
 
-项目 chimeralens 核心命令清单
-第一阶段：项目初始化与 Monorepo 环境搭建
-这些命令用于创建项目骨架和配置 pnpm Workspace。
-
-Bash
-
-# 1. 创建项目目录并初始化 Git
-
-mkdir chimeralens && cd chimeralens
-git init
-
-# 2. 初始化 pnpm Workspace (需手动创建 pnpm-workspace.yaml 文件)
-
-pnpm init -y
-
-# 3. 创建核心目录结构
-
-mkdir apps packages
-
-# 4. 安装并引入 Turborepo 管理工具
-
-pnpm add turbo --save-dev -w
-第二阶段：初始化后端 NestJS 应用 (api)
-这些命令用于在 apps 目录中创建和配置 NestJS 后端。
-
-Bash
-
-# 1. 使用 NestJS CLI 创建新应用 (在项目根目录运行)
-
-pnpm dlx @nestjs/cli new apps/api
-
-# 2. (可选) 清理嵌套的 .git 目录
-
-rm -rf apps/api/.git
-
-# 3. 运行后端开发服务器 (用于测试)
-
-pnpm dev --filter=@chimeralens/api
-
-# 4. 运行后端构建命令 (用于排错和生产打包)
-
-pnpm build --filter=@chimeralens/api
-第三阶段：初始化前端 Next.js 应用 (web)
-这些命令用于在 apps 目录中创建和配置 Next.js 前端。
-
-Bash
-
-# 1. 使用 Next.js 脚手架创建新应用 (在项目根目录运行)
-
-pnpm create next-app apps/web
-
-# 2. (可选) 清理嵌套的 .git 目录
-
-rm -rf apps/web/.git
-
-# 3. 运行前端开发服务器 (用于测试)
-
-pnpm dev --filter=@chimeralens/web
-
-# 4. (常用) 同时运行前后端两个应用的开发服务器
-
-pnpm dev
-第四阶段：数据库与共享包 (db) 的搭建
-这些命令用于创建管理数据库的共享包 @chimeralens/db。
-
-Bash
-
-# 1. 创建共享包目录
-
-mkdir packages/db
-
-# 2. 为 db 包安装 Prisma 依赖 (在项目根目录运行)
-
-pnpm add -D prisma --filter @chimeralens/db
-pnpm add @prisma/client --filter @chimeralens/db
-
-# 3. 初始化 Prisma (指定使用 PostgreSQL)
-
-pnpm -F @chimeralens/db exec prisma init --datasource-provider postgresql
-
-# 4. 将 Schema 定义推送到数据库以创建数据表
-
-pnpm -F @chimeralens/db db:push
-
-# 5. 生成类型安全的 Prisma Client
-
-pnpm -F @chimeralens/db build
+**Built with ❤️ using modern web technologies**
