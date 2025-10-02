@@ -26,7 +26,7 @@ const liveProd = [
   'price_1SDokG9cBOPN77U2lpaE9D02',
 ]
 
-let isDev = process.env.NODE_ENV === 'development'
+const isDev = process.env.NODE_ENV === 'development'
 
 if (!isDev) {
   console.log("Running in production mode");
