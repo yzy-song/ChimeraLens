@@ -59,7 +59,10 @@ export class GenerationService {
     if (template.isPremium && user.isGuest) {
       throw new ForbiddenException('This is a premium template. Please log in or register to use it.');
     }
-    if (user.credits <= 0) throw new ForbiddenException('Insufficient credits');
+
+    const cost = template.cost || 1;
+    if (user.credits < cost)
+      throw new ForbiddenException(`Insufficient credits. This template requires ${cost} credits.`);
 
     const modelConfig = MODELS[modelKey];
     if (!modelConfig) throw new Error(`Model with key '${modelKey}' not found.`);
@@ -109,7 +112,7 @@ export class GenerationService {
     const [updatedUser, newGeneration] = await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
-        data: { credits: { decrement: 1 } },
+        data: { credits: { decrement: cost } },
       }),
       this.prisma.generation.create({
         data: {

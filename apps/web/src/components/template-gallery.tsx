@@ -65,6 +65,9 @@ export function TemplateGallery({
               />
               <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                 <p className="text-white text-xs font-semibold truncate">{template.name}</p>
+                {template.cost && template.cost > 1 && (
+                  <p className="text-yellow-400 text-xs font-medium">{template.cost} 点数</p>
+                )}
               </div>
             </Card>
           </div>
