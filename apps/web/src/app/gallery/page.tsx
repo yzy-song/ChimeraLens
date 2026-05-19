@@ -91,7 +91,7 @@ export default function GalleryPage() {
         {isError && <p className="text-red-500">Error: {error.message}</p>}
 
         {!isLoading && generations.length === 0 && (
-          <p>You haven&#39;t created any images yet. <Link href="/" className="text-blue-500 hover:underline">Start creating now!</Link></p>
+          <p>You haven&#39;t created any images yet. <Link href="/" className="text-pink-500 hover:underline">Start creating now!</Link></p>
         )}
 
         {!isLoading && generations.length > 0 && (
@@ -106,7 +106,7 @@ export default function GalleryPage() {
                 Delete Selected
               </button>
               <button
-                className="px-4 py-2 rounded bg-blue-600 text-white flex items-center gap-2"
+                className="px-4 py-2 rounded bg-pink-500 text-white flex items-center gap-2"
                 disabled={selectedIds.length === 0}
                 onClick={handleBatchDownload}
               >

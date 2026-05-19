@@ -214,7 +214,7 @@ export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
       className={`w-full p-4 border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-colors
-        ${isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-400'}`}>
+        ${isDragging ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20' : 'border-gray-400'}`}>
       
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/webp" />
       <input type="file" ref={cameraInputRef} onChange={handleFileChange} className="hidden" accept="image/*" capture="user" />
@@ -263,7 +263,7 @@ export function ImageUploader({ onFileSelect }: ImageUploaderProps) {
       )}
 
       {status === 'success_multiple' && (
-         <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-3 py-1.5 rounded-full text-sm text-center">
+         <div className="flex items-center gap-2 text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-900/50 px-3 py-1.5 rounded-full text-sm text-center">
           <Users className="h-4 w-4" />
           <span>Multiple faces found. Tap to select.</span>
         </div>

@@ -144,7 +144,7 @@ export default function Home() {
             className="rounded"
           />
           <span
-            className="text-lg font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+            className="text-lg font-semibold bg-gradient-to-r from-rose-400 via-pink-500 to-rose-600 bg-clip-text text-transparent"
           >
             One-click to another you
           </span>
@@ -215,7 +215,7 @@ export default function Home() {
               {isPending && (
                 <div className="flex flex-col items-center justify-center gap-4 text-center w-full px-4">
                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                    <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 1s ease-in-out' }}></div>
+                    <div className="bg-pink-500 h-2.5 rounded-full" style={{ width: `${progress}%`, transition: 'width 1s ease-in-out' }}></div>
                   </div>
                   <p className="text-muted-foreground animate-pulse mt-2">{loadingText}</p>
                 </div>
@@ -248,7 +248,7 @@ export default function Home() {
           onClick={handleGenerateClick}
           disabled={!selectedTemplate || !sourceData?.file || isPending}
           size="lg"
-          className="w-full h-14 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-700 text-white shadow-lg hover:scale-105 transition-transform"
+          className="w-full h-14 text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg hover:scale-105 transition-transform"
         >
           <Wand2 className="mr-2 h-6 w-6" />
           {isPending ? 'Creating Magic...' : 'Generate Image'}
@@ -260,7 +260,7 @@ export default function Home() {
           onClick={handleGenerateClick}
           disabled={!selectedTemplate || !sourceData?.file || isPending}
           size="lg"
-          className="h-16 px-8 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-700 text-white shadow-lg hover:scale-105 transition-transform"
+          className="h-16 px-8 text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg hover:scale-105 transition-transform"
         >
           <Wand2 className="mr-2 h-6 w-6" />
           {isPending ? 'Creating Magic...' : 'Generate Image'}

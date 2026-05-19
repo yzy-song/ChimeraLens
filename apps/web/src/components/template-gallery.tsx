@@ -49,7 +49,7 @@ export function TemplateGallery({
             <Card className={`
               w-32 h-32 md:w-40 md:h-40 rounded-lg overflow-hidden cursor-pointer 
               transition-all duration-200 group relative
-              ${selectedTemplateId === template.id ? 'ring-4 ring-blue-500' : 'ring-2 ring-transparent hover:ring-blue-400'}
+              ${selectedTemplateId === template.id ? 'ring-4 ring-pink-500' : 'ring-2 ring-transparent hover:ring-pink-400'}
             `}>
               {template.isPremium && (
                 <div className="absolute top-1 right-1 z-10 rounded-full bg-yellow-500 p-1 text-white shadow-md">

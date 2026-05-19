@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
       <header className="p-4 border-b bg-background sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           {/* 返回主页按钮 */}
-          <Link href="/" className="flex items-center text-gray-600 hover:text-blue-500">
+          <Link href="/" className="flex items-center text-gray-600 hover:text-pink-500">
             <ArrowLeft className="mr-2 h-5 w-5" />
             Back
           </Link>
@@ -87,7 +87,7 @@ export default function PrivacyPolicyPage() {
         <section className="mt-8">
           <h2 className="text-2xl font-semibold mb-3">Contact Us</h2>
           <p>
-            If you have any questions about this Privacy Policy, please contact us at: <a href="mailto:privacy@chimeralens.com" className="text-blue-500 hover:underline">privacy@yourdomain.com</a>
+            If you have any questions about this Privacy Policy, please contact us at: <a href="mailto:privacy@chimeralens.com" className="text-pink-500 hover:underline">privacy@yourdomain.com</a>
           </p>
         </section>
       </main>
