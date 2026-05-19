@@ -19,6 +19,7 @@ import { useFirebaseLogin } from "@/hooks/use-firebase-login";
 import { GoogleIcon } from "./icons/google-icon";
 import { PasswordInput } from "./ui/password-input";
 import { useModalStore } from "@/store/modal.store";
+import { toast } from "sonner";
 
 interface AuthModalProps {
   open: boolean;
@@ -58,8 +59,10 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       firebaseLogin(idToken, { onSuccess: () => onOpenChange(false) });
-    } catch (error) {
+    } catch (error: any) {
+      const message = error?.message || String(error);
       console.error('Google Sign-In Error:', error);
+      toast.error(`Google Sign-In failed: ${message}`);
     }
   };
 
